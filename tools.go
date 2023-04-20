@@ -1,34 +1,19 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
-	"time"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/joshuarubin/go-sway"
 )
-
-var descendants []sway.Node
-
-type task struct {
-	conID int64
-	ID    string // will be created out of app_id or window class
-	Name  string
-	PID   uint32
-	WsNum int64
-}
 
 func taskInstances(ID string) []client {
 	var found []client
@@ -38,145 +23,6 @@ func taskInstances(ID string) []client {
 		}
 	}
 	return found
-}
-
-type TaskChange struct {
-	Change sway.WindowEventChange
-	Task   *task
-}
-
-type swayEventHandler struct {
-	taskUpdateChannel      chan TaskChange
-	workspaceUpdateChannel chan int64
-}
-
-func (t swayEventHandler) Workspace(ctx context.Context, event sway.WorkspaceEvent) {
-	if event.Change == "focus" {
-		// TODO: sway.WorkspaceEvent.Current should contain a Workspace, but contains Node,
-		// this may be an error of the used library ...
-		t.workspaceUpdateChannel <- 0
-	}
-}
-func (t swayEventHandler) Mode(ctx context.Context, event sway.ModeEvent)                       {}
-func (t swayEventHandler) BarConfigUpdate(ctx context.Context, event sway.BarConfigUpdateEvent) {}
-func (t swayEventHandler) Binding(ctx context.Context, event sway.BindingEvent)                 {}
-func (t swayEventHandler) Shutdown(ctx context.Context, event sway.ShutdownEvent)               {}
-func (t swayEventHandler) Tick(ctx context.Context, event sway.TickEvent)                       {}
-func (t swayEventHandler) BarStateUpdate(ctx context.Context, event sway.BarStateUpdateEvent)   {}
-func (t swayEventHandler) BarStatusUpdate(ctx context.Context, event sway.BarStateUpdateEvent)  {}
-func (t swayEventHandler) Input(ctx context.Context, event sway.InputEvent)                     {}
-func (t swayEventHandler) Window(ctx context.Context, window sway.WindowEvent) {
-	if window.Change == "new" || window.Change == "close" {
-		t.taskUpdateChannel <- TaskChange{
-			Change: window.Change,
-			// TODO: gather enough details form sway.WindowEvent to create the task
-			// structure and pass it on for smarter modifying the task array
-			Task: nil,
-		}
-	}
-}
-
-// list sway tree, return tasks sorted by workspace numbers
-func listTasks() ([]task, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	client, err := sway.New(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	tree, err := client.GetTree(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	workspaces, _ := client.GetWorkspaces(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// all nodes in the tree
-	nodes := tree.Nodes
-
-	// find outputs in all nodes
-	var outputs []*sway.Node
-	for _, n := range nodes {
-		if n.Type == "output" && !strings.HasPrefix(n.Name, "__") {
-			outputs = append(outputs, n)
-		}
-	}
-
-	// find workspaces in outputs
-	var workspaceNodes []*sway.Node
-	for _, o := range outputs {
-		nodes = o.Nodes
-		for _, n := range nodes {
-			if n.Type == "workspace" {
-				workspaceNodes = append(workspaceNodes, n)
-			}
-		}
-	}
-
-	var tasks []task
-	// find cons in workspaces recursively
-	for _, w := range workspaceNodes {
-		wsNum := workspaceNum(workspaces, w.Name)
-		descendants = nil
-		for _, con := range w.Nodes {
-			findDescendants(*con)
-		}
-
-		// create tasks from cons which represent tasks
-		for _, con := range descendants {
-			tasks = append(tasks, createTask(con, wsNum))
-		}
-
-		fNodes := w.FloatingNodes
-		for _, con := range fNodes {
-			tasks = append(tasks, createTask(*con, wsNum))
-		}
-
-	}
-	sort.Slice(tasks, func(i int, j int) bool {
-		return tasks[i].WsNum < tasks[j].WsNum
-	})
-	return tasks, nil
-}
-
-func findDescendants(con sway.Node) {
-	if len(con.Nodes) > 0 {
-		for _, node := range con.Nodes {
-			findDescendants(*node)
-		}
-	} else {
-		descendants = append(descendants, con)
-	}
-}
-
-func createTask(con sway.Node, wsNum int64) task {
-	t := task{}
-	t.conID = con.ID
-	if con.AppID != nil {
-		t.ID = *con.AppID
-	} else {
-		wp := *con.WindowProperties
-		t.ID = wp.Class
-	}
-	t.Name = con.Name
-	t.PID = *con.PID
-	t.WsNum = wsNum
-
-	return t
-}
-
-func workspaceNum(workspaces []sway.Workspace, name string) int64 {
-	for _, ws := range workspaces {
-		if ws.Name == name {
-			return ws.Num
-		}
-	}
-	return 0
 }
 
 func pinnedButton(ID string) *gtk.Box {
@@ -779,13 +625,11 @@ func pinTask(itemID string) {
 	}
 	pinned = append(pinned, itemID)
 	savePinned()
-	refreshMainBoxChannel <- struct{}{}
 }
 
 func unpinTask(itemID string) {
 	pinned = remove(pinned, itemID)
 	savePinned()
-	refreshMainBoxChannel <- struct{}{}
 }
 
 func remove(s []string, r string) []string {

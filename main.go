@@ -40,7 +40,6 @@ var (
 	oldClients                         []client
 	mainBox                            *gtk.Box
 	src                                glib.SourceHandle
-	refreshMainBoxChannel              chan struct{} = make(chan struct{}, 1)
 	outerOrientation, innerOrientation gtk.Orientation
 	widgetAnchor, menuAnchor           gdk.Gravity
 	imgSizeScaled                      int
@@ -179,72 +178,6 @@ func buildMainBox(vbox *gtk.Box) {
 			}
 		}
 	}
-
-	//if !*noWs {
-	//	wsButton, _ := gtk.ButtonNew()
-	//	currentWsNum = 1
-	//	wsPixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, fmt.Sprintf("nwg-dock/images/%v.svg", currentWsNum)),
-	//		imgSizeScaled, imgSizeScaled)
-	//	if err == nil {
-	//		wsImage, _ := gtk.ImageNewFromPixbuf(wsPixbuf)
-	//		wsButton.SetImage(wsImage)
-	//		wsButton.SetAlwaysShowImage(true)
-	//		wsButton.AddEvents(int(gdk.SCROLL_MASK))
-	//
-	//		wsUpdateChannel := getWorkspaceChangesChannel()
-	//		go func() {
-	//			for {
-	//				activeWorkspace := <-wsUpdateChannel
-	//				targetWsNum = int64(activeWorkspace)
-	//
-	//				glib.TimeoutAdd(0, func() bool {
-	//					wsPixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, fmt.Sprintf("nwg-dock/images/%v.svg", activeWorkspace)),
-	//						imgSizeScaled, imgSizeScaled)
-	//
-	//					if err == nil {
-	//						wsImage, _ := gtk.ImageNewFromPixbuf(wsPixbuf)
-	//						wsButton.SetImage(wsImage)
-	//					} else {
-	//						log.Warnf("Unable set set workspace image: %v", activeWorkspace)
-	//					}
-	//
-	//					return false
-	//				})
-	//			}
-	//		}()
-	//
-	//		wsButton.Connect("clicked", func() {
-	//			focusWorkspace(targetWsNum)
-	//		})
-	//
-	//		wsButton.Connect("enter-notify-event", cancelClose)
-	//
-	//		wsButton.Connect("scroll-event", func(btn *gtk.Button, e *gdk.Event) bool {
-	//			event := gdk.EventScrollNewFromEvent(e)
-	//			if event.Direction() == gdk.SCROLL_UP {
-	//				if targetWsNum < *numWS && targetWsNum < 20 {
-	//					targetWsNum++
-	//				} else {
-	//					targetWsNum = 1
-	//				}
-	//
-	//				wsUpdateChannel <- int(targetWsNum)
-	//				return true
-	//			} else if event.Direction() == gdk.SCROLL_DOWN {
-	//				if targetWsNum > 1 {
-	//					targetWsNum--
-	//				} else {
-	//					targetWsNum = *numWS
-	//				}
-	//
-	//				wsUpdateChannel <- int(targetWsNum)
-	//				return true
-	//			}
-	//			return false
-	//		})
-	//	}
-	//	mainBox.PackStart(wsButton, false, false, 0)
-	//}
 
 	if !*noLauncher && *launcherCmd != "" {
 		button, _ := gtk.ButtonNew()
