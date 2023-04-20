@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"os"
 )
 
 type workspace struct {
@@ -101,16 +100,6 @@ func listMonitors() error {
 	return err
 }
 
-func listWorkspaces() {
-	reply, err := hyprctl("j/workspaces")
-	if err == nil {
-		err := json.Unmarshal([]byte(reply), &workspaces)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-}
-
 func listClients() error {
 	reply, err := hyprctl("j/clients")
 	if err != nil {
@@ -118,40 +107,16 @@ func listClients() error {
 	} else {
 		err = json.Unmarshal([]byte(reply), &clients)
 	}
-
+	activeClientAddr = getActiveWindow()
 	return err
 }
 
-func getActiveWindow() {
+func getActiveWindow() string {
+	var activeWindow client
 	reply, err := hyprctl("j/activewindow")
+	err = json.Unmarshal([]byte(reply), &activeWindow)
 	if err == nil {
-		err := json.Unmarshal([]byte(reply), &activeWindow)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		return activeWindow.Address
 	}
-}
-
-func hyprWatcher() {
-	addr := &net.UnixAddr{
-		Name: fmt.Sprintf("/tmp/hypr/%s/.socket2.sock", his),
-		Net:  "unix",
-	}
-	conn, err := net.DialUnix("unix", nil, addr)
-	if err != nil {
-		fmt.Println("Error connecting to the socket:", err)
-		os.Exit(1)
-	}
-	defer conn.Close()
-
-	buf := make([]byte, 1024)
-	for {
-		n, err := conn.Read(buf)
-		if err != nil {
-			fmt.Println("Error reading from the socket:", err)
-			os.Exit(1)
-		}
-		fmt.Println(string(buf[:n-1]))
-	}
+	return ""
 }

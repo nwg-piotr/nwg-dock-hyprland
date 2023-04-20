@@ -76,70 +76,6 @@ func (t swayEventHandler) Window(ctx context.Context, window sway.WindowEvent) {
 	}
 }
 
-// TODO: The channel should *not* return a []task, but rather a TaskChange event which should
-// be used to modify the list in the frontend ...
-func getTaskChangesChannel(ctx context.Context) (chan []task, error) {
-	taskArrayChannel := make(chan []task, 1)
-	eventHandler := swayEventHandler{
-		taskUpdateChannel: make(chan TaskChange, 1),
-	}
-
-	go func() {
-		// Blocks execution until we cancel the context
-		if err := sway.Subscribe(ctx, eventHandler, sway.EventTypeWindow); err != nil {
-			log.Fatal("Unable to subscribe to sway event:", err)
-		}
-	}()
-
-	// Pretty hacky, but is simply used to convert a TaskChange to a task struct
-	go func() {
-		for {
-			<-eventHandler.taskUpdateChannel
-			tasks, err := listTasks()
-			if err != nil {
-				log.Errorf("Unable to process tasks from sway: %s", err.Error())
-				return
-			}
-
-			taskArrayChannel <- tasks
-		}
-	}()
-
-	return taskArrayChannel, nil
-}
-
-func getWorkspaceChangesChannel(ctx context.Context) chan int64 {
-	workspaceUpdateChannel := make(chan int64, 1)
-	eventHandler := swayEventHandler{
-		workspaceUpdateChannel: make(chan int64, 1),
-	}
-
-	go func() {
-		// Blocks execution until we cancel the context
-		if err := sway.Subscribe(ctx, eventHandler, sway.EventTypeWorkspace); err != nil {
-			log.Fatal("Unable to subscribe to sway event:", err)
-		}
-	}()
-
-	go func() {
-		ipc, _ := sway.New(ctx)
-
-		for {
-			<-eventHandler.workspaceUpdateChannel
-			workspaces, _ := ipc.GetWorkspaces(ctx)
-
-			for _, workspace := range workspaces {
-				if workspace.Focused {
-					workspaceUpdateChannel <- workspace.Num
-					break
-				}
-			}
-		}
-	}()
-
-	return workspaceUpdateChannel
-}
-
 // list sway tree, return tasks sorted by workspace numbers
 func listTasks() ([]task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
@@ -158,14 +94,6 @@ func listTasks() ([]task, error) {
 	workspaces, _ := client.GetWorkspaces(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	// In order not to add a separate function, let's set the global currentWsNum variable we need here
-	for _, ws := range workspaces {
-		if ws.Focused {
-			currentWsNum = ws.Num
-			break
-		}
 	}
 
 	// all nodes in the tree
@@ -942,51 +870,6 @@ func launch(ID string) {
 
 	if *autohide {
 		win.Hide()
-	}
-}
-
-func focusWorkspace(num int64) {
-	cmd := fmt.Sprintf("workspace number %v", num)
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	client, err := sway.New(ctx)
-	if err != nil {
-		log.Panic(err)
-	}
-	if _, err = client.RunCommand(ctx, cmd); err != nil {
-		log.Errorf("Unable to focus to workspace %v: %s", num, err.Error())
-	}
-
-	if *autohide {
-		src = glib.TimeoutAdd(uint(1000), func() bool {
-			win.Hide()
-			return false
-		})
-	}
-}
-
-func con2WS(conID int64, wsNum int) {
-	cmd := fmt.Sprintf("[con_id=%v] move to workspace number %v", conID, wsNum)
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	client, err := sway.New(ctx)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	if _, err = client.RunCommand(ctx, cmd); err != nil {
-		log.Errorf("Unable to move to workspace %v: %s", wsNum, err.Error())
-	}
-
-	refreshMainBoxChannel <- struct{}{}
-
-	if *autohide {
-		src = glib.TimeoutAdd(uint(1000), func() bool {
-			win.Hide()
-			return false
-		})
 	}
 }
 

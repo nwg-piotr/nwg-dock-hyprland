@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"net"
@@ -38,7 +37,6 @@ var (
 	configDirectory                    string
 	pinnedFile                         string
 	pinned                             []string
-	oldTasks                           []task
 	oldClients                         []client
 	mainBox                            *gtk.Box
 	src                                glib.SourceHandle
@@ -46,15 +44,13 @@ var (
 	outerOrientation, innerOrientation gtk.Orientation
 	widgetAnchor, menuAnchor           gdk.Gravity
 	imgSizeScaled                      int
-	currentWsNum, targetWsNum          int64
 	win                                *gtk.Window
 	windowStateChannel                 chan WindowState = make(chan WindowState, 1)
 	detectorEnteredAt                  int64
 	his                                string // $HYPRLAND_INSTANCE_SIGNATURE
 	monitors                           []monitor
 	clients                            []client
-	workspaces                         []workspace
-	activeWindow                       client
+	activeClientAddr                   string
 )
 
 // Flags
@@ -75,7 +71,6 @@ var marginLeft = flag.Int("ml", 0, "Margin Left")
 var marginRight = flag.Int("mr", 0, "Margin Right")
 var marginBottom = flag.Int("mb", 0, "Margin Bottom")
 var hotspotDelay = flag.Int64("hd", 20, "Hotspot Delay [ms]; the smaller, the faster mouse pointer needs to enter hotspot for the dock to appear; set 0 to disable")
-var noWs = flag.Bool("nows", false, "don't show the workspace switcher")
 var noLauncher = flag.Bool("nolauncher", false, "don't show the launcher button")
 var resident = flag.Bool("r", false, "Leave the program resident, but w/o hotspot")
 var debug = flag.Bool("debug", false, "turn on debug messages")
@@ -134,9 +129,19 @@ func buildMainBox(vbox *gtk.Box) {
 			if len(instances) == 1 {
 				button := taskButton(c, instances)
 				mainBox.PackStart(button, false, false, 0)
+				if c.Address == activeClientAddr {
+					button.SetProperty("name", "active")
+				} else {
+					button.SetProperty("name", "")
+				}
 			} else if !isIn(alreadyAdded, c.Class) {
 				button := taskButton(c, instances)
 				mainBox.PackStart(button, false, false, 0)
+				if c.Address == activeClientAddr {
+					button.SetProperty("name", "active")
+				} else {
+					button.SetProperty("name", "")
+				}
 				alreadyAdded = append(alreadyAdded, c.Class)
 				taskMenu(c.Class, instances)
 			} else {
@@ -154,9 +159,19 @@ func buildMainBox(vbox *gtk.Box) {
 			if len(instances) == 1 {
 				button := taskButton(t, instances)
 				mainBox.PackStart(button, false, false, 0)
+				if t.Address == activeClientAddr {
+					button.SetProperty("name", "active")
+				} else {
+					button.SetProperty("name", "")
+				}
 			} else if !isIn(alreadyAdded, t.Class) {
 				button := taskButton(t, instances)
 				mainBox.PackStart(button, false, false, 0)
+				if t.Address == activeClientAddr {
+					button.SetProperty("name", "active")
+				} else {
+					button.SetProperty("name", "")
+				}
 				alreadyAdded = append(alreadyAdded, t.Class)
 				taskMenu(t.Class, instances)
 			} else {
@@ -165,70 +180,71 @@ func buildMainBox(vbox *gtk.Box) {
 		}
 	}
 
-	if !*noWs {
-		wsButton, _ := gtk.ButtonNew()
-		wsPixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, fmt.Sprintf("nwg-dock/images/%v.svg", currentWsNum)),
-			imgSizeScaled, imgSizeScaled)
-		if err == nil {
-			wsImage, _ := gtk.ImageNewFromPixbuf(wsPixbuf)
-			wsButton.SetImage(wsImage)
-			wsButton.SetAlwaysShowImage(true)
-			wsButton.AddEvents(int(gdk.SCROLL_MASK))
-
-			wsUpdateChannel := getWorkspaceChangesChannel(context.Background())
-			go func() {
-				for {
-					activeWorkspace := <-wsUpdateChannel
-					targetWsNum = activeWorkspace
-
-					glib.TimeoutAdd(0, func() bool {
-						wsPixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, fmt.Sprintf("nwg-dock/images/%v.svg", activeWorkspace)),
-							imgSizeScaled, imgSizeScaled)
-
-						if err == nil {
-							wsImage, _ := gtk.ImageNewFromPixbuf(wsPixbuf)
-							wsButton.SetImage(wsImage)
-						} else {
-							log.Warnf("Unable set set workspace image: %v", activeWorkspace)
-						}
-
-						return false
-					})
-				}
-			}()
-
-			wsButton.Connect("clicked", func() {
-				focusWorkspace(targetWsNum)
-			})
-
-			wsButton.Connect("enter-notify-event", cancelClose)
-
-			wsButton.Connect("scroll-event", func(btn *gtk.Button, e *gdk.Event) bool {
-				event := gdk.EventScrollNewFromEvent(e)
-				if event.Direction() == gdk.SCROLL_UP {
-					if targetWsNum < *numWS && targetWsNum < 20 {
-						targetWsNum++
-					} else {
-						targetWsNum = 1
-					}
-
-					wsUpdateChannel <- targetWsNum
-					return true
-				} else if event.Direction() == gdk.SCROLL_DOWN {
-					if targetWsNum > 1 {
-						targetWsNum--
-					} else {
-						targetWsNum = *numWS
-					}
-
-					wsUpdateChannel <- targetWsNum
-					return true
-				}
-				return false
-			})
-		}
-		mainBox.PackStart(wsButton, false, false, 0)
-	}
+	//if !*noWs {
+	//	wsButton, _ := gtk.ButtonNew()
+	//	currentWsNum = 1
+	//	wsPixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, fmt.Sprintf("nwg-dock/images/%v.svg", currentWsNum)),
+	//		imgSizeScaled, imgSizeScaled)
+	//	if err == nil {
+	//		wsImage, _ := gtk.ImageNewFromPixbuf(wsPixbuf)
+	//		wsButton.SetImage(wsImage)
+	//		wsButton.SetAlwaysShowImage(true)
+	//		wsButton.AddEvents(int(gdk.SCROLL_MASK))
+	//
+	//		wsUpdateChannel := getWorkspaceChangesChannel()
+	//		go func() {
+	//			for {
+	//				activeWorkspace := <-wsUpdateChannel
+	//				targetWsNum = int64(activeWorkspace)
+	//
+	//				glib.TimeoutAdd(0, func() bool {
+	//					wsPixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, fmt.Sprintf("nwg-dock/images/%v.svg", activeWorkspace)),
+	//						imgSizeScaled, imgSizeScaled)
+	//
+	//					if err == nil {
+	//						wsImage, _ := gtk.ImageNewFromPixbuf(wsPixbuf)
+	//						wsButton.SetImage(wsImage)
+	//					} else {
+	//						log.Warnf("Unable set set workspace image: %v", activeWorkspace)
+	//					}
+	//
+	//					return false
+	//				})
+	//			}
+	//		}()
+	//
+	//		wsButton.Connect("clicked", func() {
+	//			focusWorkspace(targetWsNum)
+	//		})
+	//
+	//		wsButton.Connect("enter-notify-event", cancelClose)
+	//
+	//		wsButton.Connect("scroll-event", func(btn *gtk.Button, e *gdk.Event) bool {
+	//			event := gdk.EventScrollNewFromEvent(e)
+	//			if event.Direction() == gdk.SCROLL_UP {
+	//				if targetWsNum < *numWS && targetWsNum < 20 {
+	//					targetWsNum++
+	//				} else {
+	//					targetWsNum = 1
+	//				}
+	//
+	//				wsUpdateChannel <- int(targetWsNum)
+	//				return true
+	//			} else if event.Direction() == gdk.SCROLL_DOWN {
+	//				if targetWsNum > 1 {
+	//					targetWsNum--
+	//				} else {
+	//					targetWsNum = *numWS
+	//				}
+	//
+	//				wsUpdateChannel <- int(targetWsNum)
+	//				return true
+	//			}
+	//			return false
+	//		})
+	//	}
+	//	mainBox.PackStart(wsButton, false, false, 0)
+	//}
 
 	if !*noLauncher && *launcherCmd != "" {
 		button, _ := gtk.ButtonNew()
@@ -587,27 +603,6 @@ func main() {
 	mainBox, _ = gtk.BoxNew(innerOrientation, 0)
 	// We'll pack mainBox later, in buildMainBox
 
-	//tasks, err := listTasks()
-	//if err != nil {
-	//	log.Fatal("Couldn't list tasks:", err)
-	//}
-	//oldTasks = tasks
-	//var oldWsNum int64
-
-	//buildMainBox(tasks, alignmentBox)
-	//
-	//refreshMainBox := func(currentTasks []task, forceRefresh bool) {
-	//	if forceRefresh || (len(currentTasks) != len(oldTasks) || currentWsNum != oldWsNum) {
-	//		glib.TimeoutAdd(0, func() bool {
-	//			log.Debug("refreshing...")
-	//			buildMainBox(currentTasks, alignmentBox)
-	//			oldTasks = currentTasks
-	//			oldWsNum = currentWsNum
-	//			targetWsNum = currentWsNum
-	//			return false
-	//		})
-	//	}
-	//}
 	oldClients = clients
 	refreshMainBox := func(forceRefresh bool) {
 		if forceRefresh || (len(clients) != len(oldClients)) {
@@ -624,35 +619,6 @@ func main() {
 		log.Fatalf("Couldn't list clients: %s", err)
 	}
 	buildMainBox(alignmentBox)
-
-	//go func() {
-	//	ctx, cancel := context.WithCancel(context.Background())
-	//	defer cancel()
-	//
-	//	taskChannel, err := getTaskChangesChannel(ctx)
-	//	if err != nil {
-	//		log.Fatal("Unable to process sway tasks:", err)
-	//	}
-	//
-	//	for {
-	//		select {
-	//
-	//		// Refresh if any pin/unpin action happened
-	//		case <-refreshMainBoxChannel:
-	//			currentTasks, err := listTasks()
-	//			if err != nil {
-	//				log.Fatal("Unable to retrieve task list from sway!")
-	//			}
-	//
-	//			refreshMainBox(currentTasks, true)
-	//
-	//		// Refresh if the state of the workspace changes
-	//		case currentTasks := <-taskChannel:
-	//			refreshMainBox(currentTasks, false)
-	//
-	//		}
-	//	}
-	//}()
 
 	win.ShowAll()
 
@@ -720,7 +686,7 @@ func main() {
 		defer conn.Close()
 
 		for {
-			buf := make([]byte, 20480)
+			buf := make([]byte, 1024)
 			n, err := conn.Read(buf)
 			if err != nil {
 				fmt.Println("Error reading from socket2:", err)
