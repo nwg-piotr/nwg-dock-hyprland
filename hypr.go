@@ -107,16 +107,16 @@ func listClients() error {
 	} else {
 		err = json.Unmarshal([]byte(reply), &clients)
 	}
-	activeClientAddr = getActiveWindow()
+	activeClient, _ = getActiveWindow()
 	return err
 }
 
-func getActiveWindow() string {
+func getActiveWindow() (*client, error) {
 	var activeWindow client
 	reply, err := hyprctl("j/activewindow")
 	err = json.Unmarshal([]byte(reply), &activeWindow)
 	if err == nil {
-		return activeWindow.Address
+		return &activeWindow, nil
 	}
-	return ""
+	return nil, err
 }

@@ -49,7 +49,7 @@ var (
 	his                                string // $HYPRLAND_INSTANCE_SIGNATURE
 	monitors                           []monitor
 	clients                            []client
-	activeClientAddr                   string
+	activeClient                       *client
 )
 
 // Flags
@@ -75,7 +75,9 @@ var resident = flag.Bool("r", false, "Leave the program resident, but w/o hotspo
 var debug = flag.Bool("debug", false, "turn on debug messages")
 
 func buildMainBox(vbox *gtk.Box) {
-	mainBox.Destroy()
+	if mainBox != nil {
+		mainBox.Destroy()
+	}
 	mainBox, _ = gtk.BoxNew(innerOrientation, 0)
 
 	if *alignment == "start" {
@@ -128,7 +130,7 @@ func buildMainBox(vbox *gtk.Box) {
 			if len(instances) == 1 {
 				button := taskButton(c, instances)
 				mainBox.PackStart(button, false, false, 0)
-				if c.Address == activeClientAddr {
+				if c.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
 				} else {
 					button.SetProperty("name", "")
@@ -136,13 +138,13 @@ func buildMainBox(vbox *gtk.Box) {
 			} else if !isIn(alreadyAdded, c.Class) {
 				button := taskButton(c, instances)
 				mainBox.PackStart(button, false, false, 0)
-				if c.Address == activeClientAddr {
+				if c.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
 				} else {
 					button.SetProperty("name", "")
 				}
 				alreadyAdded = append(alreadyAdded, c.Class)
-				taskMenu(c.Class, instances)
+				clientMenu(c.Class, instances)
 			} else {
 				continue
 			}
@@ -158,7 +160,7 @@ func buildMainBox(vbox *gtk.Box) {
 			if len(instances) == 1 {
 				button := taskButton(t, instances)
 				mainBox.PackStart(button, false, false, 0)
-				if t.Address == activeClientAddr {
+				if t.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
 				} else {
 					button.SetProperty("name", "")
@@ -166,13 +168,13 @@ func buildMainBox(vbox *gtk.Box) {
 			} else if !isIn(alreadyAdded, t.Class) {
 				button := taskButton(t, instances)
 				mainBox.PackStart(button, false, false, 0)
-				if t.Address == activeClientAddr {
+				if t.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
 				} else {
 					button.SetProperty("name", "")
 				}
 				alreadyAdded = append(alreadyAdded, t.Class)
-				taskMenu(t.Class, instances)
+				clientMenu(t.Class, instances)
 			} else {
 				continue
 			}
@@ -619,7 +621,7 @@ func main() {
 		defer conn.Close()
 
 		for {
-			buf := make([]byte, 1024)
+			buf := make([]byte, 8192)
 			n, err := conn.Read(buf)
 			if err != nil {
 				fmt.Println("Error reading from socket2:", err)
