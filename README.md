@@ -4,11 +4,13 @@ This application is a part of the [nwg-shell](https://nwg-piotr.github.io/nwg-sh
 
 **Contributing:** please read the [general contributing rules for the nwg-shell project](https://nwg-piotr.github.io/nwg-shell/contribution).
 
-Configurable (w/ command line arguments and css) dock, written in Go, aimed exclusively at the [hyprland](https://github.com/hyprwm/Hyprland) 
+Configurable (w/ command line arguments and css) dock, written in Go, aimed exclusively at the [Hyprland](https://github.com/hyprwm/Hyprland) 
 Wayland compositor. It features pinned buttons, client buttons and the launcher button. The latter by default starts 
 [nwg-drawer](https://github.com/nwg-piotr/nwg-drawer).
 
-![screenshot-1.png](https://raw.githubusercontent.com/nwg-piotr/nwg-shell-resources/master/images/nwg-dock/dock-1.png)
+![2023-04-22-021230_hypr_screenshot](https://user-images.githubusercontent.com/20579136/233751336-b5c6abdd-72f7-43c7-b34d-e2f64248eb86.png)
+
+![image](https://user-images.githubusercontent.com/20579136/233751391-97f8f685-55ae-4078-badf-b8c3d7c41ab4.png)
 
 ## Differences from nwg-dock for sway:
 
