@@ -20,8 +20,6 @@ Wayland compositor. It features pinned buttons, client buttons and the launcher 
 - added 2 entries to the context (right click) menu: `togglefloating` and `fullscreen`;
 - fixed searching .desktop files of the names starting from `org.` and the like.
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/nwg-dock.svg)](https://repology.org/project/nwg-dock/versions)
-
 ## Installation
 
 ### Requirements
