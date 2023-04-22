@@ -4,9 +4,19 @@ This application is a part of the [nwg-shell](https://nwg-piotr.github.io/nwg-sh
 
 **Contributing:** please read the [general contributing rules for the nwg-shell project](https://nwg-piotr.github.io/nwg-shell/contribution).
 
-Fully configurable (w/ command line arguments and css) dock, written in Go, aimed exclusively at [sway](https://github.com/swaywm/sway) Wayland compositor. It features pinned buttons, task buttons, the workspace switcher and the launcher button. The latter by default starts [nwg-drawer](https://github.com/nwg-piotr/nwg-drawer) or `nwggrid` (application grid) - if found. In the picture(s) below the dock has been shown together with [nwg-panel](https://github.com/nwg-piotr/nwg-panel).
+Configurable (w/ command line arguments and css) dock, written in Go, aimed exclusively at the [hyprland](https://github.com/hyprwm/Hyprland) 
+Wayland compositor. It features pinned buttons, client buttons and the launcher button. The latter by default starts 
+[nwg-drawer](https://github.com/nwg-piotr/nwg-drawer).
 
 ![screenshot-1.png](https://raw.githubusercontent.com/nwg-piotr/nwg-shell-resources/master/images/nwg-dock/dock-1.png)
+
+## Differences from nwg-dock for sway:
+
+- instead of swayipc, we use Hyprland IP C, via socket & socket2, to execute hyprctl commands and listen to events;
+- removed the workspace switcher button; AFAIK it's not widely used even on sway. On Hyprland I don't know of a way to check the currently focused workspace, and it would limit the functionality of the button;
+- added highlighting of the button that represents the focused client (permanent docks only);
+- added 2 entries to the context (right click) menu: `togglefloating` and `fullscreen`;
+- fixed searching .desktop files of the names starting from `org.` and the like.
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/nwg-dock.svg)](https://repology.org/project/nwg-dock/versions)
 
@@ -14,11 +24,10 @@ Fully configurable (w/ command line arguments and css) dock, written in Go, aime
 
 ### Requirements
 
-- `go`>=1.16 (just to build)
+- `go`>=1.20 (just to build)
 - `gtk3`
 - `gtk-layer-shell`
-- [nwg-drawer](https://github.com/nwg-piotr/nwg-drawer) or
-[nwg-launchers](https://github.com/nwg-piotr/nwg-launchers): optionally. You may use another launcher (see help),
+- [nwg-drawer](https://github.com/nwg-piotr/nwg-drawer): optionally. You may use another launcher (see help),
 or none at all. The launcher button won't show up, if so.
 
 ### Steps
@@ -30,10 +39,10 @@ or none at all. The launcher button won't show up, if so.
 
 ## Running
 
-Either start the dock permanently in the sway config file,
+Either start the dock permanently in `hyprland.conf`:
 
 ```text
-exec nwg-dock [arguments]
+exec_once = nwg-dock [arguments]
 ```
 
 or assign the command to some key binding. Running the command again kills the existing program instance, so that
@@ -55,7 +64,8 @@ exec_always nwg-dock -r
 
 ### `-d` for autohiDe
 
-Move the mouse pointer to expected dock location for the dock to show up. It will be hidden a second after you leave the window. Invisible hot spots will be created on all your outputs, unless you specify one with the `-o` argument.
+Move the mouse pointer to expected dock location for the dock to show up. It will be hidden a second after you leave the
+window. Invisible hot spots will be created on all your outputs, unless you specify one with the `-o` argument.
 
 ### `-r` for just Resident
 
@@ -67,14 +77,15 @@ arguments sends `SIGUSR1` to it. Actually `pkill -USR1 nwg-dock` could be used i
 mode.
 
 Re-execution of the command with the `-d` or `-r` argument won't kill the running instance. If the dock is
-running residently, another instance will just exit with 0 code. In case you'd like to terminate it anyway, you need to `pkill -f nwg-dock`.
+running residently, another instance will just exit with 0 code. In case you'd like to terminate it anyway, you need 
+to `pkill -f nwg-dock`.
 
-*NOTE: you need to kill the running instance before reloading sway, if you've just changed the arguments you
+*NOTE: you need to kill the running instance before reloading Hyprland, if you've just changed the arguments you
 auto-start the dock with.*
 
 ```txt
-nwg-dock -h
-Usage of nwg-dock:
+$ nwg-dock-hyprland -h
+Usage of nwg-dock-hyprland:
   -a string
     	Alignment in full width/height: "start", "center" or "end" (default "center")
   -c string
@@ -83,6 +94,8 @@ Usage of nwg-dock:
   -debug
     	turn on debug messages
   -f	take Full screen width/height
+  -hd int
+    	Hotspot Delay [ms]; the smaller, the faster mouse pointer needs to enter hotspot for the dock to appear; set 0 to disable (default 20)
   -i int
     	Icon size (default 48)
   -l string
@@ -97,8 +110,6 @@ Usage of nwg-dock:
     	Margin Top
   -nolauncher
     	don't show the launcher button
-  -nows
-    	don't show the workspace switcher
   -o string
     	name of Output to display the dock on
   -p string
@@ -108,7 +119,7 @@ Usage of nwg-dock:
     	Styling: css file name (default "style.css")
   -v	display Version information
   -w int
-    	number of Workspaces you use (default 8)
+    	number of Workspaces you use (default 10)
   -x	set eXclusive zone: move other windows aside; overrides the "-l" argument
 ```
 
@@ -116,7 +127,7 @@ Usage of nwg-dock:
 
 ## Styling
 
-Edit `~/.config/nwg-dock/style.css` to your taste.
+Edit `~/.config/nwg-dock-hyprland/style.css` to your taste.
 
 ## Credits
 
@@ -125,5 +136,4 @@ This program uses some great libraries:
 - [gotk3](https://github.com/gotk3/gotk3) Copyright (c) 2013-2014 Conformal Systems LLC,
 Copyright (c) 2015-2018 gotk3 contributors
 - [gotk3-layershell](https://github.com/dlasky/gotk3-layershell) by [@dlasky](https://github.com/dlasky/gotk3-layershell/commits?author=dlasky) - many thanks for writing this software, and for patience with my requests!
-- [go-sway](https://github.com/joshuarubin/go-sway) Copyright (c) 2019 Joshua Rubin
 - [go-singleinstance](github.com/allan-simon/go-singleinstance) Copyright (c) 2015 Allan Simon

@@ -8,19 +8,19 @@ get:
 	go get "github.com/sirupsen/logrus"
 
 build:
-	go build -o bin/nwg-dock .
+	go build -o bin/nwg-dock-hyprland .
 
 install:
-	-pkill -f nwg-dock
+	-pkill -f nwg-dock-hyprland
 	sleep 1
-	mkdir -p /usr/share/nwg-dock
-	cp -r images /usr/share/nwg-dock
-	cp config/* /usr/share/nwg-dock
-	cp bin/nwg-dock /usr/bin
+	mkdir -p /usr/share/nwg-dock-hyprland
+	cp -r images /usr/share/nwg-dock-hyprland
+	cp config/* /usr/share/nwg-dock-hyprland
+	cp bin/nwg-dock-hyprland /usr/bin
 
 uninstall:
-	rm -r /usr/share/nwg-dock
-	rm /usr/bin/nwg-dock
+	rm -r /usr/share/nwg-dock-hyprland
+	rm /usr/bin/nwg-dock-hyprland
 
 run:
 	go run .

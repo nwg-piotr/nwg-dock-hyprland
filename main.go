@@ -183,7 +183,7 @@ func buildMainBox(vbox *gtk.Box) {
 
 	if !*noLauncher && *launcherCmd != "" {
 		button, _ := gtk.ButtonNew()
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock/images/grid.svg"), imgSizeScaled, imgSizeScaled)
+		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/grid.svg"), imgSizeScaled, imgSizeScaled)
 		if err == nil {
 			image, _ := gtk.ImageNewFromPixbuf(pixbuf)
 			button.SetImage(image)
@@ -311,7 +311,7 @@ func main() {
 	}
 
 	if *displayVersion {
-		fmt.Printf("nwg-dock version %s\n", version)
+		fmt.Printf("nwg-dock-hyprland version %s\n", version)
 		os.Exit(0)
 	}
 
@@ -404,7 +404,7 @@ func main() {
 	createDir(configDirectory)
 
 	if !pathExists(fmt.Sprintf("%s/style.css", configDirectory)) {
-		err := copyFile(filepath.Join(dataHome, "nwg-dock/style.css"), fmt.Sprintf("%s/style.css", configDirectory))
+		err := copyFile(filepath.Join(dataHome, "nwg-dock-hyprland/style.css"), fmt.Sprintf("%s/style.css", configDirectory))
 		if err != nil {
 			log.Warnf("Error copying file: %s", err)
 		}

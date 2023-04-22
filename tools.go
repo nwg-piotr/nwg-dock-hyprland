@@ -33,7 +33,7 @@ func pinnedButton(ID string) *gtk.Box {
 
 	image, err := createImage(ID, imgSizeScaled)
 	if err != nil {
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock/images/icon-missing.svg"),
+		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
 			imgSizeScaled, imgSizeScaled)
 		if err == nil {
 			image, _ = gtk.ImageNewFromPixbuf(pixbuf)
@@ -46,7 +46,7 @@ func pinnedButton(ID string) *gtk.Box {
 	button.SetImagePosition(gtk.POS_TOP)
 	button.SetAlwaysShowImage(true)
 	button.SetTooltipText(getName(ID))
-	pixbuf, _ := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock/images/task-empty.svg"),
+	pixbuf, _ := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
 		imgSizeScaled, imgSizeScaled/8)
 	img, _ := gtk.ImageNewFromPixbuf(pixbuf)
 	box.PackStart(img, false, false, 0)
@@ -104,7 +104,7 @@ func taskButton(t client, instances []client) *gtk.Box {
 
 	image, err := createImage(t.Class, imgSizeScaled)
 	if err != nil {
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock/images/icon-missing.svg"),
+		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
 			imgSizeScaled, imgSizeScaled)
 		if err == nil {
 			image, _ = gtk.ImageNewFromPixbuf(pixbuf)
@@ -119,11 +119,11 @@ func taskButton(t client, instances []client) *gtk.Box {
 	button.SetTooltipText(getName(t.Class))
 	var img *gtk.Image
 	if len(instances) < 2 {
-		pixbuf, _ := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock/images/task-single.svg"),
+		pixbuf, _ := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
 			imgSizeScaled, imgSizeScaled/8)
 		img, _ = gtk.ImageNewFromPixbuf(pixbuf)
 	} else {
-		pixbuf, _ := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock/images/task-multiple.svg"),
+		pixbuf, _ := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
 			imgSizeScaled, imgSizeScaled/8)
 		img, _ = gtk.ImageNewFromPixbuf(pixbuf)
 	}
@@ -262,7 +262,7 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 		submenu.Append(s)
 
 		for i := 1; i < int(*numWS)+1; i++ {
-			subItem, _ := gtk.MenuItemNewWithLabel(fmt.Sprintf("To WS %v", i))
+			subItem, _ := gtk.MenuItemNewWithLabel(fmt.Sprintf("-> WS %v", i))
 			target := i
 			subItem.Connect("activate", func() {
 				cmd := fmt.Sprintf("dispatch movetoworkspace %v,address:%v", target, a)
@@ -406,9 +406,9 @@ func readTextFile(path string) (string, error) {
 
 func configDir() string {
 	if os.Getenv("XDG_CONFIG_HOME") != "" {
-		return (fmt.Sprintf("%s/nwg-dock", os.Getenv("XDG_CONFIG_HOME")))
+		return (fmt.Sprintf("%s/nwg-dock-hyprland", os.Getenv("XDG_CONFIG_HOME")))
 	}
-	return fmt.Sprintf("%s/.config/nwg-dock", os.Getenv("HOME"))
+	return fmt.Sprintf("%s/.config/nwg-dock-hyprland", os.Getenv("HOME"))
 }
 
 func createDir(dir string) {
