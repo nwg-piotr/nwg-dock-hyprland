@@ -1,4 +1,4 @@
-# nwg-dock
+# nwg-dock-hyprland
 
 This application is a part of the [nwg-shell](https://nwg-piotr.github.io/nwg-shell) project.
 
