@@ -22,7 +22,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.0.1"
+const version = "0.0.2"
 
 type WindowState int
 
@@ -621,7 +621,7 @@ func main() {
 		defer conn.Close()
 
 		for {
-			buf := make([]byte, 8192)
+			buf := make([]byte, 10240)
 			n, err := conn.Read(buf)
 			if err != nil {
 				fmt.Println("Error reading from socket2:", err)
