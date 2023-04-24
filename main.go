@@ -287,7 +287,7 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_BOTTOM, *full)
 	}
 
-	layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_TOP)
+	layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_OVERLAY)
 
 	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_TOP, *marginTop)
 	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_LEFT, *marginLeft)
