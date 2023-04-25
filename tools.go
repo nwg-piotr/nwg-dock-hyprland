@@ -46,10 +46,15 @@ func pinnedButton(ID string) *gtk.Box {
 	button.SetImagePosition(gtk.POS_TOP)
 	button.SetAlwaysShowImage(true)
 	button.SetTooltipText(getName(ID))
-	pixbuf, _ := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+	pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
 		imgSizeScaled, imgSizeScaled/8)
-	img, _ := gtk.ImageNewFromPixbuf(pixbuf)
-	box.PackStart(img, false, false, 0)
+	var img *gtk.Image
+	if err == nil {
+		img, err = gtk.ImageNewFromPixbuf(pixbuf)
+		if err == nil {
+			box.PackStart(img, false, false, 0)
+		}
+	}
 
 	button.Connect("clicked", func() {
 		launch(ID)
@@ -119,16 +124,21 @@ func taskButton(t client, instances []client) *gtk.Box {
 	button.SetTooltipText(getName(t.Class))
 	var img *gtk.Image
 	if len(instances) < 2 {
-		pixbuf, _ := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
+		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
 			imgSizeScaled, imgSizeScaled/8)
-		img, _ = gtk.ImageNewFromPixbuf(pixbuf)
+		if err == nil {
+			img, _ = gtk.ImageNewFromPixbuf(pixbuf)
+		}
 	} else {
-		pixbuf, _ := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
+		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
 			imgSizeScaled, imgSizeScaled/8)
-		img, _ = gtk.ImageNewFromPixbuf(pixbuf)
+		if err == nil {
+			img, _ = gtk.ImageNewFromPixbuf(pixbuf)
+		}
 	}
-	box.PackStart(img, false, false, 0)
-
+	if img != nil {
+		box.PackStart(img, false, false, 0)
+	}
 	button.Connect("enter-notify-event", cancelClose)
 
 	if len(instances) == 1 {
