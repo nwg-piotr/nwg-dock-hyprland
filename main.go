@@ -22,7 +22,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.0.2"
+const version = "0.1.0"
 
 type WindowState int
 
@@ -50,6 +50,7 @@ var (
 	monitors                           []monitor
 	clients                            []client
 	activeClient                       *client
+	lastWinAddr                        string
 )
 
 // Flags
@@ -627,12 +628,17 @@ func main() {
 				fmt.Println("Error reading from socket2:", err)
 			}
 
-			if strings.Contains(string(buf[:n]), "activewindowv2") {
-				err = listClients()
-				if err != nil {
-					log.Fatalf("Couldn't list clients: %s", err)
-				} else {
-					refreshMainBox(true)
+			s := string(buf[:n])
+			if strings.Contains(s, "activewindowv2") {
+				winAddr := strings.TrimSpace(strings.Split(s, "activewindowv2>>")[1])
+				if winAddr != lastWinAddr && !strings.Contains(winAddr, ">>") {
+					err = listClients()
+					if err != nil {
+						log.Fatalf("Couldn't list clients: %s", err)
+					} else {
+						refreshMainBox(true)
+					}
+					lastWinAddr = winAddr
 				}
 			}
 		}
