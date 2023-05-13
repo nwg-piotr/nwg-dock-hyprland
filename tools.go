@@ -516,7 +516,7 @@ func getIcon(appName string) (string, error) {
 			p = strings.ToLower(path)
 		}
 	}
-	/* Some apps' app_id varies from their .desktop file name, e.g. 'gimp-2.9.9' or 'pamac-manager'.
+	/* Some apps' class varies from their .desktop file name, e.g. 'gimp-2.9.9' or 'pamac-manager'.
 	   Let's try to find a matching .desktop file name */
 	if !strings.HasPrefix(appName, "/") && p == "" { // skip icon paths given instead of names
 		p = searchDesktopDirs(appName)
