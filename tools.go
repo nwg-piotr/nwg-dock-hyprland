@@ -516,7 +516,7 @@ func getIcon(appName string) (string, error) {
 			p = strings.ToLower(path)
 		}
 	}
-	/* Some apps' class varies from their .desktop file name, e.g. 'gimp-2.9.9' or 'pamac-manager'.
+	/* Some apps' app_id varies from their .desktop file name, e.g. 'gimp-2.9.9' or 'pamac-manager'.
 	   Let's try to find a matching .desktop file name */
 	if !strings.HasPrefix(appName, "/") && p == "" { // skip icon paths given instead of names
 		p = searchDesktopDirs(appName)
@@ -533,20 +533,27 @@ func getIcon(appName string) (string, error) {
 			}
 		}
 	}
-	log.Warnf("Couldn't find the icon for %s", appName)
 	return "", errors.New("couldn't find the icon")
 }
 
-func searchDesktopDirs(class string) string {
-	var b4Separator string
-	if len(strings.Split(class, "-")) > 1 {
-		b4Separator = strings.Split(class, "-")[0]
-	} else if len(strings.Split(class, " ")) > 1 {
-		b4Separator = strings.Split(class, " ")[0]
-	} else {
-		b4Separator = class
+func searchDesktopDirs(badAppID string) string {
+	b4Separator := strings.Split(badAppID, "-")[0]
+	for _, d := range appDirs {
+		items, _ := os.ReadDir(d)
+		for _, item := range items {
+			if strings.Contains(item.Name(), b4Separator) {
+				//Let's check items starting from 'org.' first
+				if strings.Count(item.Name(), ".") > 1 && strings.HasSuffix(item.Name(),
+					fmt.Sprintf("%s.desktop", badAppID)) {
+					return filepath.Join(d, item.Name())
+				} else {
+					return ""
+				}
+			}
+		}
 	}
-
+	// exceptions like "class": "VirtualBox Manager" & virtualbox.desktop
+	b4Separator = strings.Split(badAppID, " ")[0]
 	for _, d := range appDirs {
 		items, _ := os.ReadDir(d)
 		for _, item := range items {
