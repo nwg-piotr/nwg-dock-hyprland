@@ -131,6 +131,47 @@ Usage of nwg-dock-hyprland:
 
 Edit `~/.config/nwg-dock-hyprland/style.css` to your taste.
 
+## Troubleshooting
+
+### An application icon is not displayed
+
+The only thing the dock knows about the app is it's class name.
+
+```text
+$ hyprctl clients
+(...)
+Window 55a62254b8c0 -> piotr@msi:~:
+	mapped: 1
+	hidden: 0
+	at: 1204,270
+	size: 2552,1402
+	workspace: 6 (6)
+	floating: 0
+	monitor: 2
+	class: foot
+	title: piotr@msi:~
+	initialClass: foot
+	initialTitle: foot
+	pid: 58348
+	xwayland: 0
+	pinned: 0
+	fullscreen: 0
+	fullscreenmode: 0
+	fakefullscreen: 0
+	grouped: 0
+	swallowing: 0
+```
+
+Now it'll look for an icon named 'foot'. If that fails, it'll look for a .desktop file named <class_name>.desktop, which should contain the icon name or path. If this fails as well, no icon will be displayed. I've added workarounds for some most common exceptions, but it's impossible to workaround every single application misbehaviour. This is either programmers fault (improper class name), or bad packaging (.desktop file name different from the application class name).
+
+If some app has no icon in the dock:
+
+1. check the app class name (`hyprctl clients`);
+2. find the app's .desktop file;
+3. copy it to ~/.local/share/applications/` and rename to <class_name>.desktop.
+
+If the .desktop file contains proper icon definition (`Icon=`), it should work now.
+
 ## Credits
 
 This program uses some great libraries:
