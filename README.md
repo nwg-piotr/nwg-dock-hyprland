@@ -162,7 +162,7 @@ Window 55a62254b8c0 -> piotr@msi:~:
 	swallowing: 0
 ```
 
-Now it'll look for an icon named 'foot'. If that fails, it'll look for a .desktop file named <class_name>.desktop, which should contain the icon name or path. If this fails as well, no icon will be displayed. I've added workarounds for some most common exceptions, but it's impossible to workaround every single application misbehaviour. This is either programmers fault (improper class name), or bad packaging (.desktop file name different from the application class name).
+Now it'll look for an icon named 'foot'. If that fails, it'll look for a .desktop file named foot.desktop, which should contain the icon name or path. If this fails as well, no icon will be displayed. I've added workarounds for some most common exceptions, but it's impossible to workaround every single application misbehaviour. This is either programmers fault (improper class name), or bad packaging (.desktop file name different from the application class name).
 
 If some app has no icon in the dock:
 
