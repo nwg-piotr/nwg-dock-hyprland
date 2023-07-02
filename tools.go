@@ -416,7 +416,7 @@ func readTextFile(path string) (string, error) {
 
 func configDir() string {
 	if os.Getenv("XDG_CONFIG_HOME") != "" {
-		return (fmt.Sprintf("%s/nwg-dock-hyprland", os.Getenv("XDG_CONFIG_HOME")))
+		return fmt.Sprintf("%s/nwg-dock-hyprland", os.Getenv("XDG_CONFIG_HOME"))
 	}
 	return fmt.Sprintf("%s/.config/nwg-dock-hyprland", os.Getenv("HOME"))
 }
@@ -705,7 +705,7 @@ func savePinned() {
 			_, err := f.WriteString(line + "\n")
 
 			if err != nil {
-				log.Errorf("Error saving pinned", err)
+				log.Errorf("Error saving pinned %s", err)
 			}
 		}
 	}
@@ -788,7 +788,7 @@ func mapOutputs() (map[string]*gdk.Monitor, error) {
 		geometry := mon.GetGeometry()
 		// assign output to monitor on the basis of the same x, y coordinates
 		for _, m := range monitors {
-			if int(m.X) == geometry.GetX() && int(m.Y) == geometry.GetY() {
+			if m.X == geometry.GetX() && m.Y == geometry.GetY() {
 				result[m.Name] = mon
 			}
 		}
