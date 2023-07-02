@@ -512,8 +512,10 @@ func getIcon(appName string) (string, error) {
 		path := filepath.Join(d, fmt.Sprintf("%s.desktop", appName))
 		if pathExists(path) {
 			p = path
+			break
 		} else if pathExists(strings.ToLower(path)) {
 			p = strings.ToLower(path)
+			break
 		}
 	}
 	/* Some apps' class varies from their .desktop file name, e.g. 'gimp-2.9.9' or 'pamac-manager'.
