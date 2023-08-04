@@ -22,7 +22,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.1.3"
+const version = "0.1.4"
 
 type WindowState int
 
@@ -489,20 +489,13 @@ func main() {
 		menuAnchor = gdk.GDK_GRAVITY_WEST
 	}
 
-	if *autohide {
-		// we need to cover the hotspot window, to avoid unwanted .Hide() and .Show() the dockWindow
+	if *layer == "top" {
+		layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_TOP)
+	} else if *layer == "bottom" {
+		layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_BOTTOM)
+	} else {
 		layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_OVERLAY)
 		layershell.SetExclusiveZone(win, -1)
-	} else {
-		// otherwise let's leave users freedom of choice
-		if *layer == "top" {
-			layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_TOP)
-		} else if *layer == "bottom" {
-			layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_BOTTOM)
-		} else {
-			layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_OVERLAY)
-			layershell.SetExclusiveZone(win, -1)
-		}
 	}
 
 	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_TOP, *marginTop)
