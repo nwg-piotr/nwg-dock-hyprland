@@ -504,6 +504,7 @@ func isIn(slice []string, val string) bool {
 }
 
 func getIcon(appName string) (string, error) {
+	appName = strings.Split(appName, " ")[0]
 	if strings.HasPrefix(strings.ToUpper(appName), "GIMP") {
 		return "gimp", nil
 	}
