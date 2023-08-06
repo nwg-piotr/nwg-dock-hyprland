@@ -151,6 +151,9 @@ func taskButton(t client, instances []client) *gtk.Box {
 			if btnEvent.Type() == gdk.EVENT_BUTTON_RELEASE || btnEvent.Type() == gdk.EVENT_TOUCH_END {
 				if btnEvent.Button() == 1 || btnEvent.Type() == gdk.EVENT_TOUCH_END {
 					cmd := fmt.Sprintf("dispatch focuswindow address:%s", t.Address)
+					if strings.HasPrefix(t.Workspace.Name, "special:") {
+						cmd = fmt.Sprintf("dispatch togglespecialworkspace %s", strings.Split(t.Workspace.Name, ":")[1])
+					}
 					reply, _ := hyprctl(cmd)
 					log.Debugf("%s -> %s", cmd, reply)
 					return true
