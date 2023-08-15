@@ -153,6 +153,12 @@ func taskButton(t client, instances []client) *gtk.Box {
 					cmd := fmt.Sprintf("dispatch focuswindow address:%s", t.Address)
 					reply, _ := hyprctl(cmd)
 					log.Debugf("%s -> %s", cmd, reply)
+
+					// fix #14
+					cmd = "dispatch bringactivetotop"
+					reply, _ = hyprctl(cmd)
+					log.Debugf("%s -> %s", cmd, reply)
+
 					return true
 				} else if btnEvent.Button() == 3 {
 					contextMenu := clientMenuContext(t.Class, instances)
@@ -205,6 +211,10 @@ func clientMenu(class string, instances []client) gtk.Menu {
 		menuItem.Connect("activate", func() {
 			cmd := fmt.Sprintf("dispatch focuswindow address:%s", a)
 			reply, _ := hyprctl(cmd)
+			log.Debugf("%s -> %s", cmd, reply)
+
+			cmd = "dispatch bringactivetotop"
+			reply, _ = hyprctl(cmd)
 			log.Debugf("%s -> %s", cmd, reply)
 		})
 
