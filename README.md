@@ -10,7 +10,7 @@ Wayland compositor. It features pinned buttons, client buttons and the launcher 
 
 ![2023-04-22-021230_hypr_screenshot](https://user-images.githubusercontent.com/20579136/233751336-b5c6abdd-72f7-43c7-b34d-e2f64248eb86.png)
 
-![image](https://user-images.githubusercontent.com/20579136/233751391-97f8f685-55ae-4078-badf-b8c3d7c41ab4.png)
+![image](https://user-images.githubusercontent.com/88607362/260715141-29e41f6e-73f3-4a3f-a62e-627828328347.png)
 
 ## Differences from nwg-dock for sway:
 
