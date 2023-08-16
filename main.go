@@ -63,6 +63,7 @@ var numWS = flag.Int64("w", 10, "number of Workspaces you use")
 var position = flag.String("p", "bottom", "Position: \"bottom\", \"top\" or \"left\"")
 var exclusive = flag.Bool("x", false, "set eXclusive zone: move other windows aside; overrides the \"-l\" argument")
 var imgSize = flag.Int("i", 48, "Icon size")
+var ico = flag.String("ico", "", "alternative name or path for the launcher ICOn")
 var layer = flag.String("l", "overlay", "Layer \"overlay\", \"top\" or \"bottom\"")
 var launcherCmd = flag.String("c", "", "Command assigned to the launcher button")
 var alignment = flag.String("a", "center", "Alignment in full width/height: \"start\", \"center\" or \"end\"")
@@ -184,8 +185,14 @@ func buildMainBox(vbox *gtk.Box) {
 
 	if !*noLauncher && *launcherCmd != "" {
 		button, _ := gtk.ButtonNew()
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/grid.svg"), imgSizeScaled, imgSizeScaled)
-		if err == nil {
+		var pixbuf *gdk.Pixbuf
+		var e error
+		if *ico == "" {
+			pixbuf, e = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/grid.svg"), imgSizeScaled, imgSizeScaled)
+		} else {
+			pixbuf, e = createPixbuf(*ico, imgSizeScaled)
+		}
+		if e == nil {
 			image, _ := gtk.ImageNewFromPixbuf(pixbuf)
 			button.SetImage(image)
 			button.SetAlwaysShowImage(true)

@@ -144,10 +144,6 @@ func taskButton(t client, instances []client) *gtk.Box {
 	if len(instances) == 1 {
 		button.Connect("event", func(btn *gtk.Button, e *gdk.Event) bool {
 			btnEvent := gdk.EventButtonNewFromEvent(e)
-			/* EVENT_BUTTON_PRESS would be more obvious, but it causes the misbehaviour:
-			   if con is located on an external display, after pressing the button, the conID value
-			   "freezes", and stays the same for all taskButtons, until the right mouse click.
-			   A gotk3 bug or WTF? */
 			if btnEvent.Type() == gdk.EVENT_BUTTON_RELEASE || btnEvent.Type() == gdk.EVENT_TOUCH_END {
 				if btnEvent.Button() == 1 || btnEvent.Type() == gdk.EVENT_TOUCH_END {
 					cmd := fmt.Sprintf("dispatch focuswindow address:%s", t.Address)
