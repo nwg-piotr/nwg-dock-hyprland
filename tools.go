@@ -346,8 +346,8 @@ func createImage(appID string, size int) (*gtk.Image, error) {
 	if err != nil {
 		name = appID
 	}
-	pixbuf, err := createPixbuf(name, size)
-	if err != nil {
+	pixbuf, e := createPixbuf(name, size)
+	if e != nil {
 		return nil, err
 	}
 	image, _ := gtk.ImageNewFromPixbuf(pixbuf)
