@@ -200,18 +200,20 @@ func clientMenu(class string, instances []client) gtk.Menu {
 		image, _ := gtk.ImageNewFromIconName(iconName, gtk.ICON_SIZE_MENU)
 		hbox.PackStart(image, false, false, 0)
 		title := instance.Title
-		if len(title) > 20 {
-			title = title[:20]
+		if len(title) > 25 {
+			title = title[:25]
 		}
-		label, _ := gtk.LabelNew(fmt.Sprintf("%s (%v)", title, instance.Workspace.Id))
+		wsName := instance.Workspace.Name
+		var label *gtk.Label
+		label, _ = gtk.LabelNew(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
 		hbox.PackStart(label, false, false, 0)
 		menuItem.Add(hbox)
 		menu.Append(menuItem)
 		a := instance.Address
 		menuItem.Connect("activate", func() {
 			cmd := fmt.Sprintf("dispatch focuswindow address:%s", a)
-			if strings.HasPrefix(instance.Workspace.Name, "special") {
-				_, specialName, _ := strings.Cut(instance.Workspace.Name, "special:")
+			if strings.HasPrefix(wsName, "special") {
+				_, specialName, _ := strings.Cut(wsName, "special:")
 				cmd = fmt.Sprintf("dispatch togglespecialworkspace %s", specialName)
 			}
 			reply, _ := hyprctl(cmd)
@@ -240,8 +242,8 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 		image, _ := gtk.ImageNewFromIconName(iconName, gtk.ICON_SIZE_MENU)
 		hbox.PackStart(image, false, false, 0)
 		title := instance.Title
-		if len(title) > 20 {
-			title = title[:20]
+		if len(title) > 25 {
+			title = title[:25]
 		}
 		// Clean non-ASCII chars
 		title = strings.Map(func(r rune) rune {
@@ -250,7 +252,7 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 			}
 			return r
 		}, title)
-		label, _ := gtk.LabelNew(fmt.Sprintf("%s (%v)", title, instance.Workspace.Id))
+		label, _ := gtk.LabelNew(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
 		hbox.PackStart(label, false, false, 0)
 		menuItem.Add(hbox)
 		menu.Append(menuItem)
