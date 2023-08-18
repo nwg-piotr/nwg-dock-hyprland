@@ -147,6 +147,10 @@ func taskButton(t client, instances []client) *gtk.Box {
 			if btnEvent.Type() == gdk.EVENT_BUTTON_RELEASE || btnEvent.Type() == gdk.EVENT_TOUCH_END {
 				if btnEvent.Button() == 1 || btnEvent.Type() == gdk.EVENT_TOUCH_END {
 					cmd := fmt.Sprintf("dispatch focuswindow address:%s", t.Address)
+					if strings.HasPrefix(t.Workspace.Name, "special") {
+						_, specialName, _ := strings.Cut(t.Workspace.Name, "special:")
+						cmd = fmt.Sprintf("dispatch togglespecialworkspace %s", specialName)
+					}
 					reply, _ := hyprctl(cmd)
 					log.Debugf("%s -> %s", cmd, reply)
 
@@ -206,6 +210,10 @@ func clientMenu(class string, instances []client) gtk.Menu {
 		a := instance.Address
 		menuItem.Connect("activate", func() {
 			cmd := fmt.Sprintf("dispatch focuswindow address:%s", a)
+			if strings.HasPrefix(instance.Workspace.Name, "special") {
+				_, specialName, _ := strings.Cut(instance.Workspace.Name, "special:")
+				cmd = fmt.Sprintf("dispatch togglespecialworkspace %s", specialName)
+			}
 			reply, _ := hyprctl(cmd)
 			log.Debugf("%s -> %s", cmd, reply)
 
