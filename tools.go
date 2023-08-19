@@ -3,17 +3,15 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"unicode"
-
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
 )
 
 func taskInstances(ID string) []client {
@@ -246,12 +244,12 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 			title = title[:25]
 		}
 		// Clean non-ASCII chars
-		title = strings.Map(func(r rune) rune {
-			if r > unicode.MaxASCII {
-				return -1
-			}
-			return r
-		}, title)
+		//title = strings.Map(func(r rune) rune {
+		//	if r > unicode.MaxASCII {
+		//		return -1
+		//	}
+		//	return r
+		//}, title)
 		label, _ := gtk.LabelNew(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
 		hbox.PackStart(label, false, false, 0)
 		menuItem.Add(hbox)
