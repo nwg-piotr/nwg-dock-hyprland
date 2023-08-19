@@ -562,8 +562,8 @@ func searchDesktopDirs(badAppID string) string {
 		for _, item := range items {
 			if strings.Contains(item.Name(), b4Separator) {
 				//Let's check items starting from 'org.' first
-				if strings.Count(item.Name(), ".") > 1 && strings.HasSuffix(item.Name(),
-					fmt.Sprintf("%s.desktop", badAppID)) {
+				if strings.Count(item.Name(), ".") > 1 && strings.Contains(item.Name(),
+					badAppID) {
 					return filepath.Join(d, item.Name())
 				} else {
 					return ""
