@@ -101,7 +101,7 @@ Usage of nwg-dock-hyprland:
   -i int
     	Icon size (default 48)
   -ico string
-    	alternative name or path for the launcher ICOn
+    	alternative name or path for the launcher Icon
   -l string
     	Layer "overlay", "top" or "bottom" (default "overlay")
   -mb int
