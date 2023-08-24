@@ -105,14 +105,12 @@ func taskButton(t client, instances []client) *gtk.Box {
 	button, _ := gtk.ButtonNew()
 	box.PackStart(button, false, false, 0)
 
-	image, err := createImage(t.Class, imgSizeScaled)
-	if err != nil {
+	image, _ := createImage(t.Class, imgSizeScaled)
+	if image == nil {
 		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
 			imgSizeScaled, imgSizeScaled)
 		if err == nil {
 			image, _ = gtk.ImageNewFromPixbuf(pixbuf)
-		} else {
-			image, _ = gtk.ImageNew()
 		}
 	}
 
@@ -120,6 +118,7 @@ func taskButton(t client, instances []client) *gtk.Box {
 	button.SetImagePosition(gtk.POS_TOP)
 	button.SetAlwaysShowImage(true)
 	button.SetTooltipText(getName(t.Class))
+
 	var img *gtk.Image
 	if len(instances) < 2 {
 		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
