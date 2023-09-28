@@ -373,7 +373,9 @@ func main() {
 	// Unless we are in autohide/resident mode, we probably want the same key/mouse binding to turn the dock off.
 	// Since v0.2 we can't just send SIGKILL if running instance found. We'll send SIGUSR1 instead.
 	// If it's running with `-r` or `-d` flag, it'll show the window. If not - it will die.
-	lockFilePath := fmt.Sprintf("%s/nwg-dock.lock", tempDir())
+
+	// Use md5-hashed $USER name to create unique lock files for multiple users
+	lockFilePath := fmt.Sprintf("%s/nwg-dock-%s.lock", tempDir(), md5Hash(os.Getenv("USER")))
 	lockFile, err := singleinstance.CreateLockFile(lockFilePath)
 	if err != nil {
 		pid, err := readTextFile(lockFilePath)

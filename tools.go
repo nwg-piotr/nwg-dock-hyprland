@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/gotk3/gotk3/gdk"
@@ -840,4 +842,9 @@ func getCommandOutput(command string) string {
 func isCommand(command string) bool {
 	cmd := strings.Fields(command)[0]
 	return getCommandOutput(fmt.Sprintf("command -v %s ", cmd)) != ""
+}
+
+func md5Hash(text string) string {
+	hash := md5.Sum([]byte(text))
+	return hex.EncodeToString(hash[:])
 }
