@@ -114,9 +114,11 @@ func taskButton(t client, instances []client) *gtk.Box {
 		}
 	}
 
-	button.SetImage(image)
-	button.SetImagePosition(gtk.POS_TOP)
-	button.SetAlwaysShowImage(true)
+	if image != nil {
+		button.SetImage(image)
+		button.SetImagePosition(gtk.POS_TOP)
+		button.SetAlwaysShowImage(true)
+	}
 	button.SetTooltipText(getName(t.Class))
 
 	var img *gtk.Image
