@@ -44,7 +44,7 @@ or none at all. The launcher button won't show up, if so.
 Either start the dock permanently in `hyprland.conf`:
 
 ```text
-exec_once = nwg-dock [arguments]
+exec_once = nwg-dock-hyprland [arguments]
 ```
 
 or assign the command to some key binding. Running the command again kills the existing program instance, so that
@@ -55,13 +55,13 @@ you could use the same key to open and close the dock.
 If you run the program with the `-d` or `-r` argument (preferably in autostart), it will be running residently.
 
 ```text
-exec_always nwg-dock -d
+exec_always nwg-dock-hyprland -d
 ```
 
 or
 
 ```text
-exec_always nwg-dock -r
+exec_always nwg-dock-hyprland -r
 ```
 
 ### `-d` for autohiDe
@@ -71,16 +71,16 @@ window. Invisible hot spots will be created on all your outputs, unless you spec
 
 ### `-r` for just Resident
 
-No hotspot will be created. To show/hide the dock, bind the `exec nwg-dock` command to some key or button.
+No hotspot will be created. To show/hide the dock, bind the `exec nwg-dock-hyprland` command to some key or button.
 How about the `Menu` key, which is usually useless?
 
-Re-execution of the same command hides the dock. If a resident instance found, the `nwg-dock` command w/o
-arguments sends `SIGUSR1` to it. Actually `pkill -USR1 nwg-dock` could be used instead. This also works in autohiDe
+Re-execution of the same command hides the dock. If a resident instance found, the `nwg-dock-hyprland` command w/o
+arguments sends `SIGUSR1` to it. Actually `pkill -USR1 nwg-dock-hyprland` could be used instead. This also works in autohiDe
 mode.
 
 Re-execution of the command with the `-d` or `-r` argument won't kill the running instance. If the dock is
 running residently, another instance will just exit with 0 code. In case you'd like to terminate it anyway, you need 
-to `pkill -f nwg-dock`.
+to `pkill -f nwg-dock-hyprland`.
 
 *NOTE: you need to kill the running instance before reloading Hyprland, if you've just changed the arguments you
 auto-start the dock with.*
