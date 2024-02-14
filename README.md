@@ -44,7 +44,7 @@ or none at all. The launcher button won't show up, if so.
 Either start the dock permanently in `hyprland.conf`:
 
 ```text
-exec_once = nwg-dock-hyprland [arguments]
+exec-once = nwg-dock-hyprland [arguments]
 ```
 
 or assign the command to some key binding. Running the command again kills the existing program instance, so that
