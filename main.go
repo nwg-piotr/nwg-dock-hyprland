@@ -47,6 +47,7 @@ var (
 	windowStateChannel                 chan WindowState = make(chan WindowState, 1)
 	detectorEnteredAt                  int64
 	his                                string // $HYPRLAND_INSTANCE_SIGNATURE
+	hyprDir                            string // $XDG_RUNTIME_DIR/hypr since hyprland>0.39.1, earlier /tmp/hypr
 	monitors                           []monitor
 	clients                            []client
 	activeClient                       *client
@@ -330,6 +331,13 @@ func main() {
 	}
 	log.Debugf("HYPRLAND_INSTANCE_SIGNATURE: '%s'", his)
 
+	if os.Getenv("XDG_RUNTIME_DIR") != "" && pathExists(filepath.Join(os.Getenv("XDG_RUNTIME_DIR"), "hypr")) {
+		hyprDir = filepath.Join(os.Getenv("XDG_RUNTIME_DIR"), "hypr")
+	} else {
+		hyprDir = "/tmp/hypr"
+	}
+	log.Debugf("hyprDir: '%s'", hyprDir)
+
 	if *autohide {
 		log.Info("Starting in autohiDe mode")
 	}
@@ -611,7 +619,7 @@ func main() {
 	}()
 
 	addr := &net.UnixAddr{
-		Name: fmt.Sprintf("/tmp/hypr/%s/.socket2.sock", his),
+		Name: fmt.Sprintf("%s/%s/.socket2.sock", hyprDir, his),
 		Net:  "unix",
 	}
 
