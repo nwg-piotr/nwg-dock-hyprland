@@ -67,7 +67,7 @@ type client struct {
 }
 
 func hyprctl(cmd string) ([]byte, error) {
-	socketFile := fmt.Sprintf("/tmp/hypr/%s/.socket.sock", his)
+	socketFile := fmt.Sprintf("%s/%s/.socket.sock", hyprDir, his)
 	conn, err := net.Dial("unix", socketFile)
 	if err != nil {
 		return nil, err

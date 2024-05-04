@@ -574,6 +574,15 @@ func searchDesktopDirs(badAppID string) string {
 	b4Separator = strings.Split(badAppID, " ")[0]
 	for _, d := range appDirs {
 		items, _ := os.ReadDir(d)
+		log.Info(">>>", items)
+
+		// first look for exact 'class.desktop' file, see #31
+		for _, item := range items {
+			if strings.ToUpper(item.Name()) == strings.ToUpper(fmt.Sprintf("%s.desktop", badAppID)) {
+				return filepath.Join(d, item.Name())
+			}
+		}
+
 		for _, item := range items {
 			if strings.Contains(strings.ToUpper(item.Name()), strings.ToUpper(b4Separator)) {
 				return filepath.Join(d, item.Name())
