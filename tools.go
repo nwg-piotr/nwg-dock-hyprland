@@ -32,7 +32,7 @@ func pinnedButton(ID string) *gtk.Box {
 	box.PackStart(button, false, false, 0)
 
 	image, err := createImage(ID, imgSizeScaled)
-	if err != nil {
+	if err != nil || image == nil {
 		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
 			imgSizeScaled, imgSizeScaled)
 		if err == nil {
