@@ -416,7 +416,10 @@ func main() {
 		}
 	}
 
-	dataHome = getDataHome()
+	dataHome, err = getDataHome()
+	if err != nil {
+		log.Fatal("Error getting data directory:", err)
+	}
 	configDirectory = configDir()
 	// if it doesn't exist:
 	createDir(configDirectory)

@@ -474,8 +474,23 @@ func copyFile(src, dst string) error {
 	return os.Chmod(dst, srcinfo.Mode())
 }
 
-func getDataHome() string {
-	return "/usr/share/"
+func getDataHome() (string, error) {
+	xdgDataDirs := ""
+	if os.Getenv("XDG_DATA_DIRS") != "" {
+		xdgDataDirs = os.Getenv("XDG_DATA_DIRS")
+	} else {
+		xdgDataDirs = "/usr/local/share/:/usr/share/"
+	}
+	dirs := strings.Split(xdgDataDirs, ":")
+	if os.Getenv("XDG_DATA_HOME") != "" {
+		dirs = append([]string{os.Getenv("XDG_DATA_HOME")}, dirs...)
+	}
+	for _, d := range dirs {
+		if pathExists(filepath.Join(d, "nwg-dock-hyprland")) {
+			return d, nil
+		}
+	}
+	return "", errors.New("no data directory found for nwg-dock-hyprland")
 }
 
 func getAppDirs() []string {
