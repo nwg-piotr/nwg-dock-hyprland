@@ -402,7 +402,7 @@ func createPixbuf(icon string, size int) (*gdk.Pixbuf, error) {
 
 func cacheDir() string {
 	if os.Getenv("XDG_CACHE_HOME") != "" {
-		return os.Getenv("XDG_CONFIG_HOME")
+		return os.Getenv("XDG_CACHE_HOME")
 	}
 	if os.Getenv("HOME") != "" && pathExists(filepath.Join(os.Getenv("HOME"), ".cache")) {
 		p := filepath.Join(os.Getenv("HOME"), ".cache")
@@ -475,9 +475,6 @@ func copyFile(src, dst string) error {
 }
 
 func getDataHome() string {
-	if os.Getenv("XDG_DATA_HOME") != "" {
-		return os.Getenv("XDG_DATA_HOME")
-	}
 	return "/usr/share/"
 }
 
