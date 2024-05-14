@@ -475,16 +475,23 @@ func copyFile(src, dst string) error {
 }
 
 func getDataHome() (string, error) {
-	xdgDataDirs := ""
+	var dirs []string
+	home := os.Getenv("HOME")
+	xdgDataHome := os.Getenv("XDG_DATA_HOME")
+	if xdgDataHome != "" {
+		dirs = append(dirs, xdgDataHome)
+	} else if home != "" {
+		dirs = append(dirs, filepath.Join(home, ".local/share"))
+	}
+
+	var xdgDataDirs []string
 	if os.Getenv("XDG_DATA_DIRS") != "" {
-		xdgDataDirs = os.Getenv("XDG_DATA_DIRS")
+		xdgDataDirs = strings.Split(os.Getenv("XDG_DATA_DIRS"), ":")
 	} else {
-		xdgDataDirs = "/usr/local/share/:/usr/share/"
+		xdgDataDirs = []string{"/usr/local/share/", "/usr/share/"}
 	}
-	dirs := strings.Split(xdgDataDirs, ":")
-	if os.Getenv("XDG_DATA_HOME") != "" {
-		dirs = append([]string{os.Getenv("XDG_DATA_HOME")}, dirs...)
-	}
+	dirs = append(dirs, xdgDataDirs...)
+
 	for _, d := range dirs {
 		if pathExists(filepath.Join(d, "nwg-dock-hyprland")) {
 			return d, nil
