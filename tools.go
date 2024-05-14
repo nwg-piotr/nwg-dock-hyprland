@@ -402,7 +402,7 @@ func createPixbuf(icon string, size int) (*gdk.Pixbuf, error) {
 
 func cacheDir() string {
 	if os.Getenv("XDG_CACHE_HOME") != "" {
-		return os.Getenv("XDG_CONFIG_HOME")
+		return os.Getenv("XDG_CACHE_HOME")
 	}
 	if os.Getenv("HOME") != "" && pathExists(filepath.Join(os.Getenv("HOME"), ".cache")) {
 		p := filepath.Join(os.Getenv("HOME"), ".cache")
@@ -474,11 +474,30 @@ func copyFile(src, dst string) error {
 	return os.Chmod(dst, srcinfo.Mode())
 }
 
-func getDataHome() string {
-	if os.Getenv("XDG_DATA_HOME") != "" {
-		return os.Getenv("XDG_DATA_HOME")
+func getDataHome() (string, error) {
+	var dirs []string
+	home := os.Getenv("HOME")
+	xdgDataHome := os.Getenv("XDG_DATA_HOME")
+	if xdgDataHome != "" {
+		dirs = append(dirs, xdgDataHome)
+	} else if home != "" {
+		dirs = append(dirs, filepath.Join(home, ".local/share"))
 	}
-	return "/usr/share/"
+
+	var xdgDataDirs []string
+	if os.Getenv("XDG_DATA_DIRS") != "" {
+		xdgDataDirs = strings.Split(os.Getenv("XDG_DATA_DIRS"), ":")
+	} else {
+		xdgDataDirs = []string{"/usr/local/share/", "/usr/share/"}
+	}
+	dirs = append(dirs, xdgDataDirs...)
+
+	for _, d := range dirs {
+		if pathExists(filepath.Join(d, "nwg-dock-hyprland")) {
+			return d, nil
+		}
+	}
+	return "", errors.New("no data directory found for nwg-dock-hyprland")
 }
 
 func getAppDirs() []string {
