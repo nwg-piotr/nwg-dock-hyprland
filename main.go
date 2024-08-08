@@ -23,7 +23,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.1.9"
+const version = "0.1.10"
 
 type WindowState int
 
