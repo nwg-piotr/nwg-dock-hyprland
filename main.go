@@ -105,6 +105,7 @@ func buildMainBox(vbox *gtk.Box) {
 		}
 	}
 
+	// actually unnecessary in recent Hyprland versions, but just in case, see #44.
 	sort.Slice(clients, func(i, j int) bool {
 		if clients[i].Workspace.Id != clients[j].Workspace.Id {
 			return clients[i].Workspace.Id < clients[j].Workspace.Id
