@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -103,6 +104,15 @@ func buildMainBox(vbox *gtk.Box) {
 			allItems = append(allItems, cntPin)
 		}
 	}
+
+	sort.Slice(clients, func(i, j int) bool {
+		if clients[i].Workspace.Id != clients[j].Workspace.Id {
+			return clients[i].Workspace.Id < clients[j].Workspace.Id
+		} else {
+			return clients[i].Class < clients[j].Class
+		}
+	})
+
 	for _, cntTask := range clients {
 		if !isIn(allItems, cntTask.Class) && !strings.Contains(*launcherCmd, cntTask.Class) && cntTask.Class != "" {
 			allItems = append(allItems, cntTask.Class)
