@@ -135,7 +135,9 @@ func buildMainBox(vbox *gtk.Box) {
 
 	if *launcherPos == "start" {
 		button := launcherButton()
-		mainBox.PackStart(button, false, false, 0)
+		if button != nil {
+			mainBox.PackStart(button, false, false, 0)
+		}
 	}
 
 	var alreadyAdded []string
@@ -202,7 +204,9 @@ func buildMainBox(vbox *gtk.Box) {
 
 	if *launcherPos == "end" {
 		button := launcherButton()
-		mainBox.PackStart(button, false, false, 0)
+		if button != nil {
+			mainBox.PackStart(button, false, false, 0)
+		}
 	}
 
 	mainBox.ShowAll()

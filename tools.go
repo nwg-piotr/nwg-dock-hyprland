@@ -90,8 +90,8 @@ func pinnedMenuContext(taskID string) gtk.Menu {
 }
 
 func launcherButton() *gtk.Button {
-	button, _ := gtk.ButtonNew()
 	if !*noLauncher && *launcherCmd != "" {
+		button, _ := gtk.ButtonNew()
 		var pixbuf *gdk.Pixbuf
 		var e error
 		if *ico == "" {
@@ -121,8 +121,9 @@ func launcherButton() *gtk.Button {
 			})
 			button.Connect("enter-notify-event", cancelClose)
 		}
+		return button
 	}
-	return button
+	return nil
 }
 
 /*
