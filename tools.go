@@ -62,7 +62,7 @@ func pinnedButton(ID string) *gtk.Box {
 
 	button.Connect("button-release-event", func(btn *gtk.Button, e *gdk.Event) bool {
 		btnEvent := gdk.EventButtonNewFromEvent(e)
-		if btnEvent.Button() == 1 {
+		if btnEvent.Button() == 1 || btnEvent.Button() == 2 {
 			launch(ID)
 			return true
 		} else if btnEvent.Button() == 3 {
@@ -198,6 +198,9 @@ func taskButton(t client, instances []client) *gtk.Box {
 					log.Debugf("%s -> %s", cmd, reply)
 
 					return true
+				} else if btnEvent.Button() == 2 {
+					launch(t.Class)
+					return true
 				} else if btnEvent.Button() == 3 {
 					contextMenu := clientMenuContext(t.Class, instances)
 					contextMenu.PopupAtWidget(button, widgetAnchor, menuAnchor, nil)
@@ -212,6 +215,9 @@ func taskButton(t client, instances []client) *gtk.Box {
 			if btnEvent.Button() == 1 {
 				menu := clientMenu(t.Class, instances)
 				menu.PopupAtWidget(button, widgetAnchor, menuAnchor, nil)
+				return true
+			} else if btnEvent.Button() == 2 {
+				launch(t.Class)
 				return true
 			} else if btnEvent.Button() == 3 {
 				contextMenu := clientMenuContext(t.Class, instances)
