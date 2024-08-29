@@ -353,6 +353,18 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 	})
 	menu.Append(item)
 
+	closeAllWindows, _ := gtk.MenuItemNew()
+	closeAllWindows.SetLabel("Close all windows")
+	closeAllWindows.Connect("activate", func() {
+		for _, instance := range instances {
+			address := instance.Address
+			cmd := fmt.Sprintf("dispatch closewindow address:%s", address)
+			reply, _ := hyprctl(cmd)
+			log.Infof("%s -> %s", cmd, reply)
+		}
+	})
+	menu.Append(closeAllWindows)
+
 	pinItem, _ := gtk.MenuItemNew()
 	if !inPinned(class) {
 		pinItem.SetLabel("Pin")
