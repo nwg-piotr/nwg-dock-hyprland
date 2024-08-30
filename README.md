@@ -104,6 +104,8 @@ Usage of nwg-dock-hyprland:
     	alternative name or path for the launcher ICOn
   -l string
     	Layer "overlay", "top" or "bottom" (default "overlay")
+  -lp string
+    	Launcher button position, 'start' or 'end' (default "end")
   -mb int
     	Margin Bottom
   -ml int
@@ -125,6 +127,11 @@ Usage of nwg-dock-hyprland:
   -w int
     	number of Workspaces you use (default 10)
   -x	set eXclusive zone: move other windows aside; overrides the "-l" argument
+
+Usage of signals:
+  signal 35: toggle dock visibility (USR1 has been deprecated)
+  signal 36: show dock
+  signal 37: hide dock
 ```
 
 ![screenshot-2.png](https://raw.githubusercontent.com/nwg-piotr/nwg-shell-resources/master/images/nwg-dock/dock-2.png)
