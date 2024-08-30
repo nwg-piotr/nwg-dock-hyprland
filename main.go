@@ -1,5 +1,10 @@
 package main
 
+/*
+#include <signal.h>
+*/
+import "C"
+
 import (
 	"flag"
 	"fmt"
@@ -22,7 +27,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.2.2"
+const version = "0.3.0"
 
 type WindowState int
 
@@ -298,6 +303,20 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 }
 
 func main() {
+	sigRtmin := syscall.Signal(C.SIGRTMIN)
+	sigToggle := sigRtmin + 1
+	sigShow := sigRtmin + 2
+	sigHide := sigRtmin + 3
+
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", flag.CommandLine.Name())
+		flag.PrintDefaults()
+		fmt.Fprintf(flag.CommandLine.Output(), "\nUsage of signals:\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "  %s: toggle dock visibility (USR1 has been deprecated)\n", sigToggle)
+		fmt.Fprintf(flag.CommandLine.Output(), "  %s: show dock\n", sigShow)
+		fmt.Fprintf(flag.CommandLine.Output(), "  %s: hide dock\n", sigHide)
+	}
+
 	flag.Parse()
 	if *debug {
 		log.SetLevel(log.DebugLevel)
@@ -335,9 +354,8 @@ func main() {
 	}
 
 	// Gentle SIGTERM handler thanks to reiki4040 https://gist.github.com/reiki4040/be3705f307d3cd136e85
-	// v0.2: we also need to support SIGUSR from now on.
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGTERM, syscall.SIGUSR1)
+	signal.Notify(signalChan, syscall.SIGTERM, syscall.SIGUSR1, sigToggle, sigShow, sigHide)
 
 	go func() {
 		for {
@@ -347,9 +365,8 @@ func main() {
 				log.Info("SIGTERM received, bye bye!")
 				gtk.MainQuit()
 			case syscall.SIGUSR1:
+				log.Warn("SIGUSR1 for toggling visibility is deprecated, use SIGRTMIN+1")
 				if *resident || *autohide {
-					// As win.Show() called from inside a goroutine randomly crashes GTK,
-					// let's just set e helper variable here. We'll be checking it with glib.TimeoutAdd.
 					if !win.IsVisible() {
 						log.Debug("SIGUSR1 received, showing the window")
 						windowStateChannel <- WindowShow
@@ -358,8 +375,41 @@ func main() {
 						windowStateChannel <- WindowHide
 					}
 				} else {
-					log.Info("SIGUSR1 received, and I'm not resident, bye bye!")
-					gtk.MainQuit()
+					log.Debugf("SIGUSR1 received, but I'm not resident, ignoring")
+				}
+			case sigToggle:
+				if *resident || *autohide {
+					if !win.IsVisible() {
+						log.Debug("sigToggle received, showing the window")
+						windowStateChannel <- WindowShow
+					} else {
+						log.Debug("sigToggle received, hiding the window")
+						windowStateChannel <- WindowHide
+					}
+				} else {
+					log.Debug("sigToggle received, but I'm not resident, ignoring")
+				}
+			case sigShow:
+				if *resident || *autohide {
+					if !win.IsVisible() {
+						log.Debug("sigShow received, showing the window")
+						windowStateChannel <- WindowShow
+					} else {
+						log.Debug("sigShow received, but window already visible, ignoring")
+					}
+				} else {
+					log.Debug("sigToggle received, but I'm not resident, ignoring")
+				}
+			case sigHide:
+				if *resident || *autohide {
+					if !win.IsVisible() {
+						log.Debug("sigHide received, but window already hidden, ignoring")
+					} else {
+						log.Debug("sigHide received, hiding the window")
+						windowStateChannel <- WindowHide
+					}
+				} else {
+					log.Debug("sigHide received, but I'm not resident, ignoring")
 				}
 			default:
 				log.Warn("Unknown signal")
@@ -382,8 +432,8 @@ func main() {
 				if *autohide || *resident {
 					log.Info("Running instance found, terminating...")
 				} else {
-					_ = syscall.Kill(i, syscall.SIGUSR1)
-					log.Info("Sending SIGUSR1 to running instance and bye, bye!")
+					_ = syscall.Kill(i, sigToggle)
+					log.Info("Sending sigToggle to running instance and bye, bye!")
 				}
 			}
 		}
