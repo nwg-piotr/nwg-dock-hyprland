@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -37,6 +38,7 @@ const (
 )
 
 var (
+	ignoredWorkspaces                  []string
 	appDirs                            []string
 	dataHome                           string
 	configDirectory                    string
@@ -60,6 +62,7 @@ var (
 )
 
 // Flags
+var ignoreWorkspaces = flag.String("iw", "special", "Hide the running applications on these Workspaces based on the workspace's id or name, e.g. \"special,10\"")
 var cssFileName = flag.String("s", "style.css", "Styling: css file name")
 var targetOutput = flag.String("o", "", "name of Output to display the dock on")
 var displayVersion = flag.Bool("v", false, "display Version information")
@@ -117,6 +120,13 @@ func buildMainBox(vbox *gtk.Box) {
 		} else {
 			return clients[i].Class < clients[j].Class
 		}
+	})
+
+	// delete the clients that are on ignored workspaces
+	clients = slices.DeleteFunc(clients, func(cl client) bool {
+		// only use the part in front of ":" if something like "special:scratch_term" is being used
+		clWorkspace, _, _ := strings.Cut(cl.Workspace.Name, ":")
+		return isIn(ignoredWorkspaces, strconv.Itoa(cl.Workspace.Id)) || isIn(ignoredWorkspaces, clWorkspace)
 	})
 
 	for _, cntTask := range clients {
@@ -476,6 +486,8 @@ func main() {
 	}
 	pinnedFile = filepath.Join(cacheDirectory, "nwg-dock-pinned")
 	cssFile := filepath.Join(configDirectory, *cssFileName)
+	ignoredWorkspaces = strings.Split(*ignoreWorkspaces, ",")
+	log.Printf("Ignoring workspaces: %s\n", strings.Join(ignoredWorkspaces, ","))
 
 	appDirs = getAppDirs()
 
