@@ -102,6 +102,8 @@ Usage of nwg-dock-hyprland:
     	Icon size (default 48)
   -ico string
     	alternative name or path for the launcher ICOn
+  -iw string
+    	Ignore the running applications on these Workspaces based on the workspace's name or id, e.g. "special,10"
   -l string
     	Layer "overlay", "top" or "bottom" (default "overlay")
   -lp string
@@ -129,9 +131,9 @@ Usage of nwg-dock-hyprland:
   -x	set eXclusive zone: move other windows aside; overrides the "-l" argument
 
 Usage of signals:
-  signal 35: toggle dock visibility (USR1 has been deprecated)
-  signal 36: show dock
-  signal 37: hide dock
+ SIGRTMIN+1 (signal 35): toggle dock visibility (USR1 has been deprecated)
+ SIGRTMIN+2 (signal 36): show the dock
+ SIGRTMIN+3 (signal 37): hide the dock
 ```
 
 ![screenshot-2.png](https://raw.githubusercontent.com/nwg-piotr/nwg-shell-resources/master/images/nwg-dock/dock-2.png)

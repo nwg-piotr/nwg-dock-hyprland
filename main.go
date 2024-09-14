@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -37,51 +38,53 @@ const (
 )
 
 var (
+	activeClient                       *client
 	appDirs                            []string
-	dataHome                           string
+	clients                            []client
 	configDirectory                    string
-	pinnedFile                         string
-	pinned                             []string
-	oldClients                         []client
-	mainBox                            *gtk.Box
-	src                                glib.SourceHandle
-	outerOrientation, innerOrientation gtk.Orientation
-	widgetAnchor, menuAnchor           gdk.Gravity
-	imgSizeScaled                      int
-	win                                *gtk.Window
-	windowStateChannel                 chan WindowState = make(chan WindowState, 1)
+	dataHome                           string
 	detectorEnteredAt                  int64
 	his                                string // $HYPRLAND_INSTANCE_SIGNATURE
 	hyprDir                            string // $XDG_RUNTIME_DIR/hypr since hyprland>0.39.1, earlier /tmp/hypr
-	monitors                           []monitor
-	clients                            []client
-	activeClient                       *client
+	ignoredWorkspaces                  []string
+	imgSizeScaled                      int
 	lastWinAddr                        string
+	mainBox                            *gtk.Box
+	monitors                           []monitor
+	oldClients                         []client
+	outerOrientation, innerOrientation gtk.Orientation
+	pinned                             []string
+	pinnedFile                         string
+	src                                glib.SourceHandle
+	widgetAnchor, menuAnchor           gdk.Gravity
+	win                                *gtk.Window
+	windowStateChannel                 chan WindowState = make(chan WindowState, 1)
 )
 
 // Flags
-var cssFileName = flag.String("s", "style.css", "Styling: css file name")
-var targetOutput = flag.String("o", "", "name of Output to display the dock on")
-var displayVersion = flag.Bool("v", false, "display Version information")
+var alignment = flag.String("a", "center", "Alignment in full width/height: \"start\", \"center\" or \"end\"")
 var autohide = flag.Bool("d", false, "auto-hiDe: show dock when hotspot hovered, close when left or a button clicked")
-var full = flag.Bool("f", false, "take Full screen width/height")
-var numWS = flag.Int64("w", 10, "number of Workspaces you use")
-var position = flag.String("p", "bottom", "Position: \"bottom\", \"top\" or \"left\"")
+var cssFileName = flag.String("s", "style.css", "Styling: css file name")
+var debug = flag.Bool("debug", false, "turn on debug messages")
+var displayVersion = flag.Bool("v", false, "display Version information")
 var exclusive = flag.Bool("x", false, "set eXclusive zone: move other windows aside; overrides the \"-l\" argument")
-var imgSize = flag.Int("i", 48, "Icon size")
+var full = flag.Bool("f", false, "take Full screen width/height")
+var hotspotDelay = flag.Int64("hd", 20, "Hotspot Delay [ms]; the smaller, the faster mouse pointer needs to enter hotspot for the dock to appear; set 0 to disable")
 var ico = flag.String("ico", "", "alternative name or path for the launcher ICOn")
-var layer = flag.String("l", "overlay", "Layer \"overlay\", \"top\" or \"bottom\"")
+var ignoreWorkspaces = flag.String("iw", "", "Ignore the running applications on these Workspaces based on the workspace's name or id, e.g. \"special,10\"")
+var imgSize = flag.Int("i", 48, "Icon size")
 var launcherCmd = flag.String("c", "", "Command assigned to the launcher button")
 var launcherPos = flag.String("lp", "end", "Launcher button position, 'start' or 'end'")
-var alignment = flag.String("a", "center", "Alignment in full width/height: \"start\", \"center\" or \"end\"")
-var marginTop = flag.Int("mt", 0, "Margin Top")
+var layer = flag.String("l", "overlay", "Layer \"overlay\", \"top\" or \"bottom\"")
+var marginBottom = flag.Int("mb", 0, "Margin Bottom")
 var marginLeft = flag.Int("ml", 0, "Margin Left")
 var marginRight = flag.Int("mr", 0, "Margin Right")
-var marginBottom = flag.Int("mb", 0, "Margin Bottom")
-var hotspotDelay = flag.Int64("hd", 20, "Hotspot Delay [ms]; the smaller, the faster mouse pointer needs to enter hotspot for the dock to appear; set 0 to disable")
+var marginTop = flag.Int("mt", 0, "Margin Top")
 var noLauncher = flag.Bool("nolauncher", false, "don't show the launcher button")
+var numWS = flag.Int64("w", 10, "number of Workspaces you use")
+var position = flag.String("p", "bottom", "Position: \"bottom\", \"top\" or \"left\"")
 var resident = flag.Bool("r", false, "Leave the program resident, but w/o hotspot")
-var debug = flag.Bool("debug", false, "turn on debug messages")
+var targetOutput = flag.String("o", "", "name of Output to display the dock on")
 
 func buildMainBox(vbox *gtk.Box) {
 	if mainBox != nil {
@@ -117,6 +120,13 @@ func buildMainBox(vbox *gtk.Box) {
 		} else {
 			return clients[i].Class < clients[j].Class
 		}
+	})
+
+	// delete the clients that are on ignored workspaces
+	clients = slices.DeleteFunc(clients, func(cl client) bool {
+		// only use the part in front of ":" if something like "special:scratch_term" is being used
+		clWorkspace, _, _ := strings.Cut(cl.Workspace.Name, ":")
+		return isIn(ignoredWorkspaces, strconv.Itoa(cl.Workspace.Id)) || isIn(ignoredWorkspaces, clWorkspace)
 	})
 
 	for _, cntTask := range clients {
@@ -476,6 +486,8 @@ func main() {
 	}
 	pinnedFile = filepath.Join(cacheDirectory, "nwg-dock-pinned")
 	cssFile := filepath.Join(configDirectory, *cssFileName)
+	ignoredWorkspaces = strings.Split(*ignoreWorkspaces, ",")
+	log.Printf("Ignoring workspaces: %s\n", strings.Join(ignoredWorkspaces, ","))
 
 	appDirs = getAppDirs()
 
