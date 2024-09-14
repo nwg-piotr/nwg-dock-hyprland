@@ -322,9 +322,9 @@ func main() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", flag.CommandLine.Name())
 		flag.PrintDefaults()
 		fmt.Fprintf(flag.CommandLine.Output(), "\nUsage of signals:\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "  %s: toggle dock visibility (USR1 has been deprecated)\n", sigToggle)
-		fmt.Fprintf(flag.CommandLine.Output(), "  %s: show dock\n", sigShow)
-		fmt.Fprintf(flag.CommandLine.Output(), "  %s: hide dock\n", sigHide)
+		fmt.Fprintf(flag.CommandLine.Output(), " SIGRTMIN+1 (%s): toggle dock visibility (USR1 has been deprecated)\n", sigToggle)
+		fmt.Fprintf(flag.CommandLine.Output(), " SIGRTMIN+2 (%s): show the dock\n", sigShow)
+		fmt.Fprintf(flag.CommandLine.Output(), " SIGRTMIN+3 (%s): hide the dock\n", sigHide)
 	}
 
 	flag.Parse()
