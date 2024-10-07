@@ -8,6 +8,8 @@ Configurable (w/ command line arguments and css) dock, written in Go, aimed excl
 Wayland compositor. It features pinned buttons, client buttons and the launcher button. The latter by default starts 
 [nwg-drawer](https://github.com/nwg-piotr/nwg-drawer).
 
+You'll find a lot of useful information in [this video](https://youtu.be/16KX3vnbNcg?si=POGOVwYxPXDIrwrT) on the "My Linux For Work" YT channel by Stephan Raabe.
+
 ![2023-04-22-021230_hypr_screenshot](https://user-images.githubusercontent.com/20579136/233751336-b5c6abdd-72f7-43c7-b34d-e2f64248eb86.png)
 
 ![image](https://user-images.githubusercontent.com/20579136/233751391-97f8f685-55ae-4078-badf-b8c3d7c41ab4.png)
