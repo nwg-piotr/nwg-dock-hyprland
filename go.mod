@@ -1,4 +1,4 @@
-module nwg-dock-hyprland
+module github.com/nwg-piotr/nwg-dock-hyprland
 
 go 1.23
 
