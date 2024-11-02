@@ -82,7 +82,7 @@ var marginRight = flag.Int("mr", 0, "Margin Right")
 var marginTop = flag.Int("mt", 0, "Margin Top")
 var noLauncher = flag.Bool("nolauncher", false, "don't show the launcher button")
 var numWS = flag.Int64("w", 10, "number of Workspaces you use")
-var position = flag.String("p", "bottom", "Position: \"bottom\", \"top\" or \"left\"")
+var position = flag.String("p", "bottom", "Position: \"bottom\", \"top\" \"left\" or \"right\"")
 var resident = flag.Bool("r", false, "Leave the program resident, but w/o hotspot")
 var targetOutput = flag.String("o", "", "name of Output to display the dock on")
 
@@ -246,7 +246,7 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 	detectorBox, _ := gtk.EventBoxNew()
 	_ = detectorBox.SetProperty("name", "detector-box")
 
-	if *position == "bottom" {
+	if *position == "bottom" || *position == "right" {
 		box.PackStart(detectorBox, false, false, 0)
 	} else {
 		box.PackEnd(detectorBox, false, false, 0)
@@ -291,10 +291,14 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_RIGHT, *full)
 	}
 
-	if *position == "left" {
+	if *position == "left" || *position == "right" {
 		detectorBox.SetSizeRequest(w/3, h)
 		hotspotBox.SetSizeRequest(2, h)
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_LEFT, true)
+		if *position == "left" {
+			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_LEFT, true)
+		} else {
+			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_RIGHT, true)
+		}
 
 		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_TOP, *full)
 		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_BOTTOM, *full)
@@ -487,7 +491,9 @@ func main() {
 	pinnedFile = filepath.Join(cacheDirectory, "nwg-dock-pinned")
 	cssFile := filepath.Join(configDirectory, *cssFileName)
 	ignoredWorkspaces = strings.Split(*ignoreWorkspaces, ",")
-	log.Printf("Ignoring workspaces: %s\n", strings.Join(ignoredWorkspaces, ","))
+	if *ignoreWorkspaces != "" {
+		log.Infof("Ignored workspaces: %s\n", strings.Join(ignoredWorkspaces, ","))
+	}
 
 	appDirs = getAppDirs()
 
@@ -548,8 +554,12 @@ func main() {
 		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_RIGHT, *full)
 	}
 
-	if *position == "left" {
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_LEFT, true)
+	if *position == "left" || *position == "right" {
+		if *position == "left" {
+			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_LEFT, true)
+		} else {
+			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_RIGHT, true)
+		}
 
 		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_TOP, *full)
 		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_BOTTOM, *full)
