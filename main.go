@@ -233,7 +233,7 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 
 	layershell.InitForWindow(win)
 	layershell.SetMonitor(win, &monitor)
-	layershell.SetNamespace(win, "nwg-dock-hotspot")
+	layershell.SetNamespace(win, "hotspot")
 
 	var box *gtk.Box
 	if *position == "bottom" || *position == "top" {
