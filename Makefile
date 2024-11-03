@@ -1,8 +1,6 @@
 get:
-	go get github.com/gotk3/gotk3
-	go get github.com/gotk3/gotk3/gdk
-	go get github.com/gotk3/gotk3/glib
-	go get github.com/dlasky/gotk3-layershell/layershell
+	go get github.com/diamondburned/gotk4-layer-shell/pkg/gtklayershell
+	go get github.com/diamondburned/gotk4/pkg
 	go get github.com/joshuarubin/go-sway
 	go get github.com/allan-simon/go-singleinstance
 	go get "github.com/sirupsen/logrus"

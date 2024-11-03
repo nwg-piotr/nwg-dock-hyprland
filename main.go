@@ -511,7 +511,7 @@ func main() {
 		gtk.StyleContextAddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 	}
 
-	win = gtk.NewWindow(gdk.WindowToplevel)
+	win = gtk.NewWindow(gtk.WindowToplevel)
 	if err != nil {
 		log.Fatal("Unable to create window:", err)
 	}

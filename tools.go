@@ -44,7 +44,7 @@ func pinnedButton(ID string) *gtk.Box {
 	}
 
 	button.SetImage(image)
-	button.SetImagePosition(gtk.BaselinePositionTop)
+	button.SetImagePosition(gtk.PosTop)
 	button.SetAlwaysShowImage(true)
 	button.SetTooltipText(getName(ID))
 	pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
@@ -52,9 +52,7 @@ func pinnedButton(ID string) *gtk.Box {
 	var img *gtk.Image
 	if err == nil {
 		img = gtk.NewImageFromPixbuf(pixbuf)
-		if err == nil {
-			box.PackStart(img, false, false, 0)
-		}
+		box.PackStart(img, false, false, 0)
 	}
 
 	button.Connect("clicked", func() {
@@ -156,7 +154,7 @@ func taskButton(t client, instances []client) *gtk.Box {
 
 	if image != nil {
 		button.SetImage(image)
-		button.SetImagePosition(gtk.BaselinePositionTop)
+		button.SetImagePosition(gtk.PosBottom)
 		button.SetAlwaysShowImage(true)
 	}
 	button.SetTooltipText(getName(t.Class))
@@ -242,7 +240,7 @@ func clientMenu(class string, instances []client) gtk.Menu {
 	for _, instance := range instances {
 		menuItem := gtk.NewMenuItem()
 		hbox := gtk.NewBox(gtk.OrientationHorizontal, 6)
-		image := gtk.NewImageFromIconName(iconName, gtk.IconSizeMenu)
+		image := gtk.NewImageFromIconName(iconName, int(gtk.IconSizeMenu))
 		hbox.PackStart(image, false, false, 0)
 		title := instance.Title
 		if len(title) > 25 {
@@ -284,7 +282,7 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 	for _, instance := range instances {
 		menuItem := gtk.NewMenuItem()
 		hbox := gtk.NewBox(gtk.OrientationHorizontal, 6)
-		image := gtk.NewImageFromIconName(iconName, gtk.IconSizeMenu)
+		image := gtk.NewImageFromIconName(iconName, int(gtk.IconSizeMenu))
 		hbox.PackStart(image, false, false, 0)
 		title := instance.Title
 		if len(title) > 25 {
