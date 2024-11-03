@@ -4,9 +4,14 @@ go 1.23
 
 require (
 	github.com/allan-simon/go-singleinstance v0.0.0-20210120080615-d0997106ab37
-	github.com/dlasky/gotk3-layershell v0.0.0-20240515133811-5c5115f0d774
-	github.com/gotk3/gotk3 v0.6.5-0.20240618185848-ff349ae13f56
+	github.com/diamondburned/gotk4/pkg v0.3.1
 	github.com/sirupsen/logrus v1.9.3
 )
 
-require golang.org/x/sys v0.26.0 // indirect
+require (
+	github.com/KarpelesLab/weak v0.1.1 // indirect
+	github.com/diamondburned/gotk4-layer-shell/pkg v0.0.0-20240109211357-6efa9f6dc438 // indirect
+	go4.org/unsafe/assume-no-moving-gc v0.0.0-20231121144256-b99613f794b6 // indirect
+	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+)

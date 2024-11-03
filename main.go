@@ -8,6 +8,7 @@ import "C"
 import (
 	"flag"
 	"fmt"
+
 	"net"
 	"os"
 	"os/signal"
@@ -19,13 +20,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/allan-simon/go-singleinstance"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/allan-simon/go-singleinstance"
-	"github.com/dlasky/gotk3-layershell/layershell"
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4-layer-shell/pkg/gtklayershell"
+	"github.com/diamondburned/gotk4/pkg/gdk/v3"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 )
 
 const version = "0.3.2"
@@ -90,7 +91,7 @@ func buildMainBox(vbox *gtk.Box) {
 	if mainBox != nil {
 		mainBox.Destroy()
 	}
-	mainBox, _ = gtk.BoxNew(innerOrientation, 0)
+	mainBox = gtk.NewBox(innerOrientation, 0)
 
 	if *alignment == "start" {
 		vbox.PackStart(mainBox, false, true, 0)
@@ -167,17 +168,17 @@ func buildMainBox(vbox *gtk.Box) {
 				button := taskButton(c, instances)
 				mainBox.PackStart(button, false, false, 0)
 				if c.Class == activeClient.Class && !*autohide {
-					button.SetProperty("name", "active")
+					button.SetObjectProperty("name", "active")
 				} else {
-					button.SetProperty("name", "")
+					button.SetObjectProperty("name", "")
 				}
 			} else if !isIn(alreadyAdded, c.Class) {
 				button := taskButton(c, instances)
 				mainBox.PackStart(button, false, false, 0)
 				if c.Class == activeClient.Class && !*autohide {
-					button.SetProperty("name", "active")
+					button.SetObjectProperty("name", "active")
 				} else {
-					button.SetProperty("name", "")
+					button.SetObjectProperty("name", "")
 				}
 				alreadyAdded = append(alreadyAdded, c.Class)
 				clientMenu(c.Class, instances)
@@ -197,17 +198,17 @@ func buildMainBox(vbox *gtk.Box) {
 				button := taskButton(t, instances)
 				mainBox.PackStart(button, false, false, 0)
 				if t.Class == activeClient.Class && !*autohide {
-					button.SetProperty("name", "active")
+					button.SetObjectProperty("name", "active")
 				} else {
-					button.SetProperty("name", "")
+					button.SetObjectProperty("name", "")
 				}
 			} else if !isIn(alreadyAdded, t.Class) {
 				button := taskButton(t, instances)
 				mainBox.PackStart(button, false, false, 0)
 				if t.Class == activeClient.Class && !*autohide {
-					button.SetProperty("name", "active")
+					button.SetObjectProperty("name", "active")
 				} else {
-					button.SetProperty("name", "")
+					button.SetObjectProperty("name", "")
 				}
 				alreadyAdded = append(alreadyAdded, t.Class)
 				clientMenu(t.Class, instances)
@@ -228,23 +229,23 @@ func buildMainBox(vbox *gtk.Box) {
 }
 
 func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
-	w, h := dockWindow.GetSize()
-	win, _ := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	w, h := dockWindow.Size()
+	win := gtk.NewWindow(gtk.WindowToplevel)
 
-	layershell.InitForWindow(win)
-	layershell.SetMonitor(win, &monitor)
-	layershell.SetNamespace(win, "hotspot")
+	gtklayershell.InitForWindow(win)
+	gtklayershell.SetMonitor(win, &monitor)
+	gtklayershell.SetNamespace(win, "hotspot")
 
 	var box *gtk.Box
 	if *position == "bottom" || *position == "top" {
-		box, _ = gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+		box = gtk.NewBox(gtk.OrientationVertical, 0)
 	} else {
-		box, _ = gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+		box = gtk.NewBox(gtk.OrientationHorizontal, 0)
 	}
 	win.Add(box)
 
-	detectorBox, _ := gtk.EventBoxNew()
-	_ = detectorBox.SetProperty("name", "detector-box")
+	detectorBox := gtk.NewEventBox()
+	detectorBox.SetObjectProperty("name", "detector-box")
 
 	if *position == "bottom" || *position == "right" {
 		box.PackStart(detectorBox, false, false, 0)
@@ -256,8 +257,8 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 		detectorEnteredAt = time.Now().UnixNano() / 1000000
 	})
 
-	hotspotBox, _ := gtk.EventBoxNew()
-	_ = hotspotBox.SetProperty("name", "hotspot-box")
+	hotspotBox := gtk.NewEventBox()
+	hotspotBox.SetObjectProperty("name", "hotspot-box")
 
 	if *position == "bottom" {
 		box.PackStart(hotspotBox, false, false, 0)
@@ -268,7 +269,7 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 	hotspotBox.Connect("enter-notify-event", func() {
 		hotspotEnteredAt := time.Now().UnixNano() / 1000000
 		delay := hotspotEnteredAt - detectorEnteredAt
-		layershell.SetMonitor(dockWindow, &monitor)
+		gtklayershell.SetMonitor(dockWindow, &monitor)
 		if delay <= *hotspotDelay || *hotspotDelay == 0 {
 			log.Debugf("Delay %v < %v ms, let's show the window!", delay, *hotspotDelay)
 			dockWindow.Hide()
@@ -282,36 +283,36 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 		detectorBox.SetSizeRequest(w, h/3)
 		hotspotBox.SetSizeRequest(w, 2)
 		if *position == "bottom" {
-			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_BOTTOM, true)
+			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeBottom, true)
 		} else {
-			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_TOP, true)
+			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeTop, true)
 		}
 
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_LEFT, *full)
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_RIGHT, *full)
+		gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeLeft, *full)
+		gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeRight, *full)
 	}
 
 	if *position == "left" || *position == "right" {
 		detectorBox.SetSizeRequest(w/3, h)
 		hotspotBox.SetSizeRequest(2, h)
 		if *position == "left" {
-			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_LEFT, true)
+			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeLeft, true)
 		} else {
-			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_RIGHT, true)
+			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeRight, true)
 		}
 
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_TOP, *full)
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_BOTTOM, *full)
+		gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeTop, *full)
+		gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeBottom, *full)
 	}
 
-	layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_OVERLAY)
+	gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerOverlay)
 
-	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_TOP, *marginTop)
-	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_LEFT, *marginLeft)
-	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_RIGHT, *marginRight)
-	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_BOTTOM, *marginBottom)
+	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeTop, *marginTop)
+	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeLeft, *marginLeft)
+	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeRight, *marginRight)
+	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeBottom, *marginBottom)
 
-	layershell.SetExclusiveZone(win, -1)
+	gtklayershell.SetExclusiveZone(win, -1)
 
 	return *win
 }
@@ -497,93 +498,93 @@ func main() {
 
 	appDirs = getAppDirs()
 
-	gtk.Init(nil)
+	gtk.Init()
 
-	cssProvider, _ := gtk.CssProviderNew()
+	cssProvider := gtk.NewCSSProvider()
 
 	err = cssProvider.LoadFromPath(cssFile)
 	if err != nil {
 		log.Warnf("%s file not found, using GTK styling\n", cssFile)
 	} else {
 		log.Printf("Using style: %s\n", cssFile)
-		screen, _ := gdk.ScreenGetDefault()
-		gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+		screen := gdk.ScreenGetDefault()
+		gtk.StyleContextAddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 	}
 
-	win, err = gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	win = gtk.NewWindow(gdk.WindowToplevel)
 	if err != nil {
 		log.Fatal("Unable to create window:", err)
 	}
 
-	layershell.InitForWindow(win)
-	layershell.SetNamespace(win, "nwg-dock")
+	gtklayershell.InitForWindow(win)
+	gtklayershell.SetNamespace(win, "nwg-dock")
 
 	var output2mon map[string]*gdk.Monitor
 	if *targetOutput != "" {
-		// We want to assign layershell to a monitor, but we only know the output name!
+		// We want to assign gtklayershell to a monitor, but we only know the output name!
 		output2mon, err = mapOutputs()
 		if err == nil {
-			layershell.SetMonitor(win, output2mon[*targetOutput])
+			gtklayershell.SetMonitor(win, output2mon[*targetOutput])
 		} else {
-			log.Warn(fmt.Sprintf("Couldn't assign layershell to monitor: %s", err))
+			log.Warn(fmt.Sprintf("Couldn't assign gtklayershell to monitor: %s", err))
 		}
 	}
 
 	if *exclusive {
-		layershell.AutoExclusiveZoneEnable(win)
+		gtklayershell.AutoExclusiveZoneEnable(win)
 		*layer = "top"
 	}
 
 	if *position == "bottom" || *position == "top" {
 		if *position == "bottom" {
-			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_BOTTOM, true)
+			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeBottom, true)
 
-			widgetAnchor = gdk.GDK_GRAVITY_NORTH
-			menuAnchor = gdk.GDK_GRAVITY_SOUTH
+			widgetAnchor = gdk.GravityNorth
+			menuAnchor = gdk.GravitySouth
 		} else {
-			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_TOP, true)
+			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeTop, true)
 
-			widgetAnchor = gdk.GDK_GRAVITY_SOUTH
-			menuAnchor = gdk.GDK_GRAVITY_NORTH
+			widgetAnchor = gdk.GravitySouth
+			menuAnchor = gdk.GravityNorth
 		}
 
-		outerOrientation = gtk.ORIENTATION_VERTICAL
-		innerOrientation = gtk.ORIENTATION_HORIZONTAL
+		outerOrientation = gtk.OrientationVertical
+		innerOrientation = gtk.OrientationHorizontal
 
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_LEFT, *full)
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_RIGHT, *full)
+		gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeLeft, *full)
+		gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeRight, *full)
 	}
 
 	if *position == "left" || *position == "right" {
 		if *position == "left" {
-			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_LEFT, true)
+			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeLeft, true)
 		} else {
-			layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_RIGHT, true)
+			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeRight, true)
 		}
 
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_TOP, *full)
-		layershell.SetAnchor(win, layershell.LAYER_SHELL_EDGE_BOTTOM, *full)
+		gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeTop, *full)
+		gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeBottom, *full)
 
-		outerOrientation = gtk.ORIENTATION_HORIZONTAL
-		innerOrientation = gtk.ORIENTATION_VERTICAL
+		outerOrientation = gtk.OrientationHorizontal
+		innerOrientation = gtk.OrientationVertical
 
-		widgetAnchor = gdk.GDK_GRAVITY_EAST
-		menuAnchor = gdk.GDK_GRAVITY_WEST
+		widgetAnchor = gdk.GravityEast
+		menuAnchor = gdk.GravityWest
 	}
 
 	if *layer == "top" {
-		layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_TOP)
+		gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerTop)
 	} else if *layer == "bottom" {
-		layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_BOTTOM)
+		gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerBottom)
 	} else {
-		layershell.SetLayer(win, layershell.LAYER_SHELL_LAYER_OVERLAY)
-		layershell.SetExclusiveZone(win, -1)
+		gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerOverlay)
+		gtklayershell.SetExclusiveZone(win, -1)
 	}
 
-	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_TOP, *marginTop)
-	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_LEFT, *marginLeft)
-	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_RIGHT, *marginRight)
-	layershell.SetMargin(win, layershell.LAYER_SHELL_EDGE_BOTTOM, *marginBottom)
+	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeTop, *marginTop)
+	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeLeft, *marginLeft)
+	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeRight, *marginRight)
+	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeBottom, *marginBottom)
 
 	win.Connect("destroy", func() {
 		gtk.MainQuit()
@@ -604,14 +605,14 @@ func main() {
 		cancelClose()
 	})
 
-	outerBox, _ := gtk.BoxNew(outerOrientation, 0)
-	_ = outerBox.SetProperty("name", "box")
+	outerBox := gtk.NewBox(outerOrientation, 0)
+	outerBox.SetObjectProperty("name", "box")
 	win.Add(outerBox)
 
-	alignmentBox, _ := gtk.BoxNew(innerOrientation, 0)
+	alignmentBox := gtk.NewBox(innerOrientation, 0)
 	outerBox.PackStart(alignmentBox, true, true, 0)
 
-	mainBox, _ = gtk.BoxNew(innerOrientation, 0)
+	mainBox = gtk.NewBox(innerOrientation, 0)
 	// We'll pack mainBox later, in buildMainBox
 
 	oldClients = clients
@@ -636,7 +637,7 @@ func main() {
 	if *autohide {
 		glib.TimeoutAdd(uint(500), win.Hide)
 
-		mRefProvider, _ := gtk.CssProviderNew()
+		mRefProvider := gtk.NewCSSProvider()
 		css := "window { background-color: rgba (0, 0, 0, 0); border: none}"
 		err := mRefProvider.LoadFromData(css)
 		if err != nil {
@@ -649,7 +650,7 @@ func main() {
 			for _, monitor := range monitors {
 				win := setupHotSpot(monitor, win)
 
-				ctx, _ := win.GetStyleContext()
+				ctx := win.StyleContext()
 				ctx.AddProvider(mRefProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 				win.ShowAll()
@@ -659,7 +660,7 @@ func main() {
 			monitor := output2mon[*targetOutput]
 			win := setupHotSpot(*monitor, win)
 
-			ctx, _ := win.GetStyleContext()
+			ctx := win.StyleContext()
 			ctx.AddProvider(mRefProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 			win.ShowAll()
