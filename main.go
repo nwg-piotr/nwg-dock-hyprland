@@ -87,19 +87,20 @@ var resident = flag.Bool("r", false, "Leave the program resident, but w/o hotspo
 var targetOutput = flag.String("o", "", "name of Output to display the dock on")
 
 var vertical bool
+var alignmentBox *gtk.Box
 
-func buildMainBox(vbox *gtk.Box) {
+func buildMainBox() {
 	if mainBox != nil {
 		mainBox.Destroy()
 	}
 	mainBox, _ = gtk.BoxNew(innerOrientation, 0)
 
 	if *alignment == "start" {
-		vbox.PackStart(mainBox, false, true, 0)
+		alignmentBox.PackStart(mainBox, false, true, 0)
 	} else if *alignment == "end" {
-		vbox.PackEnd(mainBox, false, true, 0)
+		alignmentBox.PackEnd(mainBox, false, true, 0)
 	} else {
-		vbox.PackStart(mainBox, true, false, 0)
+		alignmentBox.PackStart(mainBox, true, false, 0)
 	}
 
 	var err error
@@ -610,7 +611,7 @@ func main() {
 	_ = outerBox.SetProperty("name", "box")
 	win.Add(outerBox)
 
-	alignmentBox, _ := gtk.BoxNew(innerOrientation, 0)
+	alignmentBox, _ = gtk.BoxNew(innerOrientation, 0)
 	outerBox.PackStart(alignmentBox, true, true, 0)
 
 	mainBox, _ = gtk.BoxNew(innerOrientation, 0)
@@ -620,7 +621,7 @@ func main() {
 	refreshMainBox := func(forceRefresh bool) {
 		if forceRefresh || (len(clients) != len(oldClients)) {
 			glib.TimeoutAdd(0, func() bool {
-				buildMainBox(alignmentBox)
+				buildMainBox()
 				oldClients = clients
 				return false
 			})
@@ -631,7 +632,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Couldn't list clients: %s", err)
 	}
-	buildMainBox(alignmentBox)
+	buildMainBox()
 
 	win.ShowAll()
 

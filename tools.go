@@ -856,6 +856,7 @@ func pinTask(itemID string) {
 func unpinTask(itemID string) {
 	pinned = remove(pinned, itemID)
 	savePinned()
+	buildMainBox()
 }
 
 func remove(s []string, r string) []string {
