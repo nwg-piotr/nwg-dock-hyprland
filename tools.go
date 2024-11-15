@@ -26,10 +26,15 @@ func taskInstances(ID string) []client {
 	return found
 }
 
-func pinnedButton(ID string) *gtk.Box {
+func pinnedButton(ID string, position *string) *gtk.Box {
+	vertical = *position == "left" || *position == "right"
+
 	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	if vertical {
+		box.SetOrientation(gtk.ORIENTATION_HORIZONTAL)
+	}
+
 	button, _ := gtk.ButtonNew()
-	box.PackStart(button, false, false, 0)
 
 	image, err := createImage(ID, imgSizeScaled)
 	if err != nil || image == nil {
@@ -46,15 +51,6 @@ func pinnedButton(ID string) *gtk.Box {
 	button.SetImagePosition(gtk.POS_TOP)
 	button.SetAlwaysShowImage(true)
 	button.SetTooltipText(getName(ID))
-	pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
-		imgSizeScaled, imgSizeScaled/8)
-	var img *gtk.Image
-	if err == nil {
-		img, err = gtk.ImageNewFromPixbuf(pixbuf)
-		if err == nil {
-			box.PackStart(img, false, false, 0)
-		}
-	}
 
 	button.Connect("clicked", func() {
 		launch(ID)
@@ -74,6 +70,27 @@ func pinnedButton(ID string) *gtk.Box {
 	})
 
 	button.Connect("enter-notify-event", cancelClose)
+
+	var pixbuf *gdk.Pixbuf
+	if !vertical {
+		pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+			imgSizeScaled, imgSizeScaled/8)
+	} else {
+		pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
+			imgSizeScaled/8, imgSizeScaled)
+	}
+
+	if err == nil {
+		img, _ := gtk.ImageNewFromPixbuf(pixbuf)
+		if *position == "left" || *position == "top" {
+			box.PackStart(img, false, false, 0)
+			box.PackStart(button, false, false, 0)
+		} else {
+			box.PackStart(button, false, false, 0)
+			box.PackStart(img, false, false, 0)
+		}
+	}
+
 	return box
 }
 
@@ -89,7 +106,14 @@ func pinnedMenuContext(taskID string) gtk.Menu {
 	return *menu
 }
 
-func launcherButton() *gtk.Button {
+func launcherButton(position *string) *gtk.Box {
+	vertical = *position == "left" || *position == "right"
+
+	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	if vertical {
+		box.SetOrientation(gtk.ORIENTATION_HORIZONTAL)
+	}
+
 	if !*noLauncher && *launcherCmd != "" {
 		button, _ := gtk.ButtonNew()
 		var pixbuf *gdk.Pixbuf
@@ -120,8 +144,27 @@ func launcherButton() *gtk.Button {
 				}
 			})
 			button.Connect("enter-notify-event", cancelClose)
+
+			if !vertical {
+				pixbuf, e = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+					imgSizeScaled, imgSizeScaled/8)
+			} else {
+				pixbuf, e = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
+					imgSizeScaled/8, imgSizeScaled)
+			}
+
+			if e == nil {
+				img, _ := gtk.ImageNewFromPixbuf(pixbuf)
+				if *position == "left" || *position == "top" {
+					box.PackStart(img, false, false, 0)
+					box.PackStart(button, false, false, 0)
+				} else {
+					box.PackStart(button, false, false, 0)
+					box.PackStart(img, false, false, 0)
+				}
+			}
 		}
-		return button
+		return box
 	}
 	return nil
 }
@@ -139,15 +182,23 @@ func cancelClose() {
 	}
 }
 
-func taskButton(t client, instances []client) *gtk.Box {
+func taskButton(t client, instances []client, position *string) *gtk.Box {
+	vertical = *position == "left" || *position == "right"
+
 	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	if vertical {
+		box.SetOrientation(gtk.ORIENTATION_HORIZONTAL)
+	}
+
 	button, _ := gtk.ButtonNew()
-	box.PackStart(button, false, false, 0)
 
 	image, _ := createImage(t.Class, imgSizeScaled)
 	if image == nil {
+		//var pixbuf *gdk.Pixbuf
+		//var err error
 		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
 			imgSizeScaled, imgSizeScaled)
+
 		if err == nil {
 			image, _ = gtk.ImageNewFromPixbuf(pixbuf)
 		}
@@ -161,21 +212,45 @@ func taskButton(t client, instances []client) *gtk.Box {
 	button.SetTooltipText(getName(t.Class))
 
 	var img *gtk.Image
-	if len(instances) < 2 {
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
-			imgSizeScaled, imgSizeScaled/8)
-		if err == nil {
-			img, _ = gtk.ImageNewFromPixbuf(pixbuf)
+	var pixbuf *gdk.Pixbuf
+	var err error
+	if len(instances) > 1 {
+		if !vertical {
+			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
+				imgSizeScaled, imgSizeScaled/8)
+		} else {
+			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple-vertical.svg"),
+				imgSizeScaled/8, imgSizeScaled)
+		}
+	} else if len(instances) == 1 {
+		if !vertical {
+			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
+				imgSizeScaled, imgSizeScaled/8)
+		} else {
+			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single-vertical.svg"),
+				imgSizeScaled/8, imgSizeScaled)
 		}
 	} else {
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
-			imgSizeScaled, imgSizeScaled/8)
-		if err == nil {
-			img, _ = gtk.ImageNewFromPixbuf(pixbuf)
+		if !vertical {
+			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+				imgSizeScaled, imgSizeScaled/8)
+		} else {
+			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
+				imgSizeScaled/8, imgSizeScaled)
 		}
 	}
+	if err == nil {
+		img, _ = gtk.ImageNewFromPixbuf(pixbuf)
+	}
 	if img != nil {
-		box.PackStart(img, false, false, 0)
+		if *position == "left" || *position == "top" {
+			box.PackStart(img, false, false, 0)
+			box.PackStart(button, false, false, 0)
+		} else {
+			box.PackStart(button, false, false, 0)
+			box.PackStart(img, false, false, 0)
+		}
+
 	}
 	button.Connect("enter-notify-event", cancelClose)
 

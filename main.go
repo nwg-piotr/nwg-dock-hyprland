@@ -86,6 +86,8 @@ var position = flag.String("p", "bottom", "Position: \"bottom\", \"top\" \"left\
 var resident = flag.Bool("r", false, "Leave the program resident, but w/o hotspot")
 var targetOutput = flag.String("o", "", "name of Output to display the dock on")
 
+var vertical bool
+
 func buildMainBox(vbox *gtk.Box) {
 	if mainBox != nil {
 		mainBox.Destroy()
@@ -149,7 +151,7 @@ func buildMainBox(vbox *gtk.Box) {
 	}
 
 	if *launcherPos == "start" {
-		button := launcherButton()
+		button := launcherButton(position)
 		if button != nil {
 			mainBox.PackStart(button, false, false, 0)
 		}
@@ -158,13 +160,13 @@ func buildMainBox(vbox *gtk.Box) {
 	var alreadyAdded []string
 	for _, pin := range pinned {
 		if !inTasks(pin) {
-			button := pinnedButton(pin)
+			button := pinnedButton(pin, position)
 			mainBox.PackStart(button, false, false, 0)
 		} else {
 			instances := taskInstances(pin)
 			c := instances[0]
 			if len(instances) == 1 {
-				button := taskButton(c, instances)
+				button := taskButton(c, instances, position)
 				mainBox.PackStart(button, false, false, 0)
 				if c.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
@@ -172,7 +174,7 @@ func buildMainBox(vbox *gtk.Box) {
 					button.SetProperty("name", "")
 				}
 			} else if !isIn(alreadyAdded, c.Class) {
-				button := taskButton(c, instances)
+				button := taskButton(c, instances, position)
 				mainBox.PackStart(button, false, false, 0)
 				if c.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
@@ -194,7 +196,7 @@ func buildMainBox(vbox *gtk.Box) {
 		if !inPinned(t.Class) && t.Class != "" {
 			instances := taskInstances(t.Class)
 			if len(instances) == 1 {
-				button := taskButton(t, instances)
+				button := taskButton(t, instances, position)
 				mainBox.PackStart(button, false, false, 0)
 				if t.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
@@ -202,7 +204,7 @@ func buildMainBox(vbox *gtk.Box) {
 					button.SetProperty("name", "")
 				}
 			} else if !isIn(alreadyAdded, t.Class) {
-				button := taskButton(t, instances)
+				button := taskButton(t, instances, position)
 				mainBox.PackStart(button, false, false, 0)
 				if t.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
@@ -218,7 +220,7 @@ func buildMainBox(vbox *gtk.Box) {
 	}
 
 	if *launcherPos == "end" {
-		button := launcherButton()
+		button := launcherButton(position)
 		if button != nil {
 			mainBox.PackStart(button, false, false, 0)
 		}
