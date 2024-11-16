@@ -28,7 +28,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
-const version = "0.3.2"
+const version = "0.3.3"
 
 type WindowState int
 
@@ -86,18 +86,21 @@ var position = flag.String("p", "bottom", "Position: \"bottom\", \"top\" \"left\
 var resident = flag.Bool("r", false, "Leave the program resident, but w/o hotspot")
 var targetOutput = flag.String("o", "", "name of Output to display the dock on")
 
-func buildMainBox(vbox *gtk.Box) {
+var vertical bool
+var alignmentBox *gtk.Box
+
+func buildMainBox() {
 	if mainBox != nil {
 		mainBox.Destroy()
 	}
 	mainBox, _ = gtk.BoxNew(innerOrientation, 0)
 
 	if *alignment == "start" {
-		vbox.PackStart(mainBox, false, true, 0)
+		alignmentBox.PackStart(mainBox, false, true, 0)
 	} else if *alignment == "end" {
-		vbox.PackEnd(mainBox, false, true, 0)
+		alignmentBox.PackEnd(mainBox, false, true, 0)
 	} else {
-		vbox.PackStart(mainBox, true, false, 0)
+		alignmentBox.PackStart(mainBox, true, false, 0)
 	}
 
 	var err error
@@ -149,7 +152,7 @@ func buildMainBox(vbox *gtk.Box) {
 	}
 
 	if *launcherPos == "start" {
-		button := launcherButton()
+		button := launcherButton(position)
 		if button != nil {
 			mainBox.PackStart(button, false, false, 0)
 		}
@@ -158,13 +161,13 @@ func buildMainBox(vbox *gtk.Box) {
 	var alreadyAdded []string
 	for _, pin := range pinned {
 		if !inTasks(pin) {
-			button := pinnedButton(pin)
+			button := pinnedButton(pin, position)
 			mainBox.PackStart(button, false, false, 0)
 		} else {
 			instances := taskInstances(pin)
 			c := instances[0]
 			if len(instances) == 1 {
-				button := taskButton(c, instances)
+				button := taskButton(c, instances, position)
 				mainBox.PackStart(button, false, false, 0)
 				if c.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
@@ -172,7 +175,7 @@ func buildMainBox(vbox *gtk.Box) {
 					button.SetProperty("name", "")
 				}
 			} else if !isIn(alreadyAdded, c.Class) {
-				button := taskButton(c, instances)
+				button := taskButton(c, instances, position)
 				mainBox.PackStart(button, false, false, 0)
 				if c.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
@@ -194,7 +197,7 @@ func buildMainBox(vbox *gtk.Box) {
 		if !inPinned(t.Class) && t.Class != "" {
 			instances := taskInstances(t.Class)
 			if len(instances) == 1 {
-				button := taskButton(t, instances)
+				button := taskButton(t, instances, position)
 				mainBox.PackStart(button, false, false, 0)
 				if t.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
@@ -202,7 +205,7 @@ func buildMainBox(vbox *gtk.Box) {
 					button.SetProperty("name", "")
 				}
 			} else if !isIn(alreadyAdded, t.Class) {
-				button := taskButton(t, instances)
+				button := taskButton(t, instances, position)
 				mainBox.PackStart(button, false, false, 0)
 				if t.Class == activeClient.Class && !*autohide {
 					button.SetProperty("name", "active")
@@ -218,7 +221,7 @@ func buildMainBox(vbox *gtk.Box) {
 	}
 
 	if *launcherPos == "end" {
-		button := launcherButton()
+		button := launcherButton(position)
 		if button != nil {
 			mainBox.PackStart(button, false, false, 0)
 		}
@@ -608,7 +611,7 @@ func main() {
 	_ = outerBox.SetProperty("name", "box")
 	win.Add(outerBox)
 
-	alignmentBox, _ := gtk.BoxNew(innerOrientation, 0)
+	alignmentBox, _ = gtk.BoxNew(innerOrientation, 0)
 	outerBox.PackStart(alignmentBox, true, true, 0)
 
 	mainBox, _ = gtk.BoxNew(innerOrientation, 0)
@@ -618,7 +621,7 @@ func main() {
 	refreshMainBox := func(forceRefresh bool) {
 		if forceRefresh || (len(clients) != len(oldClients)) {
 			glib.TimeoutAdd(0, func() bool {
-				buildMainBox(alignmentBox)
+				buildMainBox()
 				oldClients = clients
 				return false
 			})
@@ -629,7 +632,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Couldn't list clients: %s", err)
 	}
-	buildMainBox(alignmentBox)
+	buildMainBox()
 
 	win.ShowAll()
 
