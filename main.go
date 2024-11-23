@@ -611,7 +611,7 @@ func main() {
 	outerBox.SetObjectProperty("name", "box")
 	win.Add(outerBox)
 
-	alignmentBox := gtk.NewBox(innerOrientation, 0)
+	alignmentBox = gtk.NewBox(innerOrientation, 0)
 	outerBox.PackStart(alignmentBox, true, true, 0)
 
 	mainBox = gtk.NewBox(innerOrientation, 0)
@@ -621,7 +621,7 @@ func main() {
 	refreshMainBox := func(forceRefresh bool) {
 		if forceRefresh || (len(clients) != len(oldClients)) {
 			glib.TimeoutAdd(0, func() bool {
-				buildMainBox(alignmentBox)
+				buildMainBox()
 				oldClients = clients
 				return false
 			})
@@ -632,7 +632,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Couldn't list clients: %s", err)
 	}
-	buildMainBox(alignmentBox)
+	buildMainBox()
 
 	win.ShowAll()
 

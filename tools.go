@@ -34,7 +34,7 @@ func pinnedButton(ID string, position *string) *gtk.Box {
 	if vertical {
 		box.SetOrientation(gtk.OrientationHorizontal)
 	}
-	
+
 	button := gtk.NewButton()
 
 	image, err := createImage(ID, imgSizeScaled)
@@ -504,9 +504,6 @@ func createPixbuf(icon string, size int) (*gdkpixbuf.Pixbuf, error) {
 	}
 
 	iconTheme := gtk.IconThemeGetDefault()
-	//if err != nil {
-	//	log.Fatal("Couldn't get default theme: ", err)
-	//}
 	pixbuf, err := iconTheme.LoadIcon(icon, size, gtk.IconLookupForceSize)
 	if err != nil {
 		ico, err := getIcon(icon)
