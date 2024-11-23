@@ -27,10 +27,15 @@ func taskInstances(ID string) []client {
 	return found
 }
 
-func pinnedButton(ID string) *gtk.Box {
+func pinnedButton(ID string, position *string) *gtk.Box {
+	vertical = *position == "left" || *position == "right"
+
 	box := gtk.NewBox(gtk.OrientationVertical, 0)
+	if vertical {
+		box.SetOrientation(gtk.OrientationHorizontal)
+	}
+	
 	button := gtk.NewButton()
-	box.PackStart(button, false, false, 0)
 
 	image, err := createImage(ID, imgSizeScaled)
 	if err != nil || image == nil {
@@ -47,13 +52,6 @@ func pinnedButton(ID string) *gtk.Box {
 	button.SetImagePosition(gtk.PosTop)
 	button.SetAlwaysShowImage(true)
 	button.SetTooltipText(getName(ID))
-	pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
-		imgSizeScaled, imgSizeScaled/8)
-	var img *gtk.Image
-	if err == nil {
-		img = gtk.NewImageFromPixbuf(pixbuf)
-		box.PackStart(img, false, false, 0)
-	}
 
 	button.Connect("clicked", func() {
 		launch(ID)
@@ -73,6 +71,27 @@ func pinnedButton(ID string) *gtk.Box {
 	})
 
 	button.Connect("enter-notify-event", cancelClose)
+
+	var pixbuf *gdkpixbuf.Pixbuf
+	if !vertical {
+		pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+			imgSizeScaled, imgSizeScaled/8)
+	} else {
+		pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
+			imgSizeScaled/8, imgSizeScaled)
+	}
+
+	if err == nil {
+		img := gtk.NewImageFromPixbuf(pixbuf)
+		if *position == "left" || *position == "top" {
+			box.PackStart(img, false, false, 0)
+			box.PackStart(button, false, false, 0)
+		} else {
+			box.PackStart(button, false, false, 0)
+			box.PackStart(img, false, false, 0)
+		}
+	}
+
 	return box
 }
 
@@ -88,7 +107,14 @@ func pinnedMenuContext(taskID string) gtk.Menu {
 	return *menu
 }
 
-func launcherButton() *gtk.Button {
+func launcherButton(position *string) *gtk.Box {
+	vertical = *position == "left" || *position == "right"
+
+	box := gtk.NewBox(gtk.OrientationVertical, 0)
+	if vertical {
+		box.SetOrientation(gtk.OrientationHorizontal)
+	}
+
 	if !*noLauncher && *launcherCmd != "" {
 		button := gtk.NewButton()
 		var pixbuf *gdkpixbuf.Pixbuf
@@ -119,8 +145,27 @@ func launcherButton() *gtk.Button {
 				}
 			})
 			button.Connect("enter-notify-event", cancelClose)
+
+			if !vertical {
+				pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+					imgSizeScaled, imgSizeScaled/8)
+			} else {
+				pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
+					imgSizeScaled/8, imgSizeScaled)
+			}
+
+			if e == nil {
+				img := gtk.NewImageFromPixbuf(pixbuf)
+				if *position == "left" || *position == "top" {
+					box.PackStart(img, false, false, 0)
+					box.PackStart(button, false, false, 0)
+				} else {
+					box.PackStart(button, false, false, 0)
+					box.PackStart(img, false, false, 0)
+				}
+			}
 		}
-		return button
+		return box
 	}
 	return nil
 }
@@ -138,15 +183,23 @@ func cancelClose() {
 	}
 }
 
-func taskButton(t client, instances []client) *gtk.Box {
+func taskButton(t client, instances []client, position *string) *gtk.Box {
+	vertical = *position == "left" || *position == "right"
+
 	box := gtk.NewBox(gtk.OrientationVertical, 0)
+	if vertical {
+		box.SetOrientation(gtk.OrientationHorizontal)
+	}
+
 	button := gtk.NewButton()
-	box.PackStart(button, false, false, 0)
 
 	image, _ := createImage(t.Class, imgSizeScaled)
 	if image == nil {
+		//var pixbuf *gdk.Pixbuf
+		//var err error
 		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
 			imgSizeScaled, imgSizeScaled)
+
 		if err == nil {
 			image = gtk.NewImageFromPixbuf(pixbuf)
 		}
@@ -154,27 +207,51 @@ func taskButton(t client, instances []client) *gtk.Box {
 
 	if image != nil {
 		button.SetImage(image)
-		button.SetImagePosition(gtk.PosBottom)
+		button.SetImagePosition(gtk.PosTop)
 		button.SetAlwaysShowImage(true)
 	}
 	button.SetTooltipText(getName(t.Class))
 
 	var img *gtk.Image
-	if len(instances) < 2 {
-		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
-			imgSizeScaled, imgSizeScaled/8)
-		if err == nil {
-			img = gtk.NewImageFromPixbuf(pixbuf)
+	var pixbuf *gdkpixbuf.Pixbuf
+	var err error
+	if len(instances) > 1 {
+		if !vertical {
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
+				imgSizeScaled, imgSizeScaled/8)
+		} else {
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple-vertical.svg"),
+				imgSizeScaled/8, imgSizeScaled)
+		}
+	} else if len(instances) == 1 {
+		if !vertical {
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
+				imgSizeScaled, imgSizeScaled/8)
+		} else {
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single-vertical.svg"),
+				imgSizeScaled/8, imgSizeScaled)
 		}
 	} else {
-		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
-			imgSizeScaled, imgSizeScaled/8)
-		if err == nil {
-			img = gtk.NewImageFromPixbuf(pixbuf)
+		if !vertical {
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+				imgSizeScaled, imgSizeScaled/8)
+		} else {
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
+				imgSizeScaled/8, imgSizeScaled)
 		}
 	}
+	if err == nil {
+		img = gtk.NewImageFromPixbuf(pixbuf)
+	}
 	if img != nil {
-		box.PackStart(img, false, false, 0)
+		if *position == "left" || *position == "top" {
+			box.PackStart(img, false, false, 0)
+			box.PackStart(button, false, false, 0)
+		} else {
+			box.PackStart(button, false, false, 0)
+			box.PackStart(img, false, false, 0)
+		}
+
 	}
 	button.Connect("enter-notify-event", cancelClose)
 
@@ -780,6 +857,7 @@ func pinTask(itemID string) {
 func unpinTask(itemID string) {
 	pinned = remove(pinned, itemID)
 	savePinned()
+	buildMainBox()
 }
 
 func remove(s []string, r string) []string {
