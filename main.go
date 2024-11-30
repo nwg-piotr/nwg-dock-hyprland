@@ -28,7 +28,7 @@ import (
 	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 )
 
-const version = "0.3.3"
+const version = "0.4.0"
 
 type WindowState int
 
