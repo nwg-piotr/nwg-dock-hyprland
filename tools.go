@@ -5,9 +5,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
+	"github.com/diamondburned/gotk4/pkg/gdk/v3"
+	"github.com/diamondburned/gotk4/pkg/gdkpixbuf/v2"
+	"github.com/diamondburned/gotk4/pkg/glib/v2"
+	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -29,26 +30,26 @@ func taskInstances(ID string) []client {
 func pinnedButton(ID string, position *string) *gtk.Box {
 	vertical = *position == "left" || *position == "right"
 
-	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	box := gtk.NewBox(gtk.OrientationVertical, 0)
 	if vertical {
-		box.SetOrientation(gtk.ORIENTATION_HORIZONTAL)
+		box.SetOrientation(gtk.OrientationHorizontal)
 	}
 
-	button, _ := gtk.ButtonNew()
+	button := gtk.NewButton()
 
 	image, err := createImage(ID, imgSizeScaled)
 	if err != nil || image == nil {
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
+		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
 			imgSizeScaled, imgSizeScaled)
 		if err == nil {
-			image, _ = gtk.ImageNewFromPixbuf(pixbuf)
+			image = gtk.NewImageFromPixbuf(pixbuf)
 		} else {
-			image, _ = gtk.ImageNew()
+			image = gtk.NewImage()
 		}
 	}
 
 	button.SetImage(image)
-	button.SetImagePosition(gtk.POS_TOP)
+	button.SetImagePosition(gtk.PosTop)
 	button.SetAlwaysShowImage(true)
 	button.SetTooltipText(getName(ID))
 
@@ -57,7 +58,7 @@ func pinnedButton(ID string, position *string) *gtk.Box {
 	})
 
 	button.Connect("button-release-event", func(btn *gtk.Button, e *gdk.Event) bool {
-		btnEvent := gdk.EventButtonNewFromEvent(e)
+		btnEvent := e.AsButton()
 		if btnEvent.Button() == 1 || btnEvent.Button() == 2 {
 			launch(ID)
 			return true
@@ -71,17 +72,17 @@ func pinnedButton(ID string, position *string) *gtk.Box {
 
 	button.Connect("enter-notify-event", cancelClose)
 
-	var pixbuf *gdk.Pixbuf
+	var pixbuf *gdkpixbuf.Pixbuf
 	if !vertical {
-		pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+		pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
 			imgSizeScaled, imgSizeScaled/8)
 	} else {
-		pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
+		pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
 			imgSizeScaled/8, imgSizeScaled)
 	}
 
 	if err == nil {
-		img, _ := gtk.ImageNewFromPixbuf(pixbuf)
+		img := gtk.NewImageFromPixbuf(pixbuf)
 		if *position == "left" || *position == "top" {
 			box.PackStart(img, false, false, 0)
 			box.PackStart(button, false, false, 0)
@@ -95,8 +96,8 @@ func pinnedButton(ID string, position *string) *gtk.Box {
 }
 
 func pinnedMenuContext(taskID string) gtk.Menu {
-	menu, _ := gtk.MenuNew()
-	menuItem, _ := gtk.MenuItemNewWithLabel("Unpin")
+	menu := gtk.NewMenu()
+	menuItem := gtk.NewMenuItemWithLabel("Unpin")
 	menuItem.Connect("activate", func() {
 		unpinTask(taskID)
 	})
@@ -109,22 +110,22 @@ func pinnedMenuContext(taskID string) gtk.Menu {
 func launcherButton(position *string) *gtk.Box {
 	vertical = *position == "left" || *position == "right"
 
-	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	box := gtk.NewBox(gtk.OrientationVertical, 0)
 	if vertical {
-		box.SetOrientation(gtk.ORIENTATION_HORIZONTAL)
+		box.SetOrientation(gtk.OrientationHorizontal)
 	}
 
 	if !*noLauncher && *launcherCmd != "" {
-		button, _ := gtk.ButtonNew()
-		var pixbuf *gdk.Pixbuf
+		button := gtk.NewButton()
+		var pixbuf *gdkpixbuf.Pixbuf
 		var e error
 		if *ico == "" {
-			pixbuf, e = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/grid.svg"), imgSizeScaled, imgSizeScaled)
+			pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/grid.svg"), imgSizeScaled, imgSizeScaled)
 		} else {
 			pixbuf, e = createPixbuf(*ico, imgSizeScaled)
 		}
 		if e == nil {
-			image, _ := gtk.ImageNewFromPixbuf(pixbuf)
+			image := gtk.NewImageFromPixbuf(pixbuf)
 			button.SetImage(image)
 			button.SetAlwaysShowImage(true)
 
@@ -146,15 +147,15 @@ func launcherButton(position *string) *gtk.Box {
 			button.Connect("enter-notify-event", cancelClose)
 
 			if !vertical {
-				pixbuf, e = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+				pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
 					imgSizeScaled, imgSizeScaled/8)
 			} else {
-				pixbuf, e = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
+				pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
 					imgSizeScaled/8, imgSizeScaled)
 			}
 
 			if e == nil {
-				img, _ := gtk.ImageNewFromPixbuf(pixbuf)
+				img := gtk.NewImageFromPixbuf(pixbuf)
 				if *position == "left" || *position == "top" {
 					box.PackStart(img, false, false, 0)
 					box.PackStart(button, false, false, 0)
@@ -185,62 +186,62 @@ func cancelClose() {
 func taskButton(t client, instances []client, position *string) *gtk.Box {
 	vertical = *position == "left" || *position == "right"
 
-	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	box := gtk.NewBox(gtk.OrientationVertical, 0)
 	if vertical {
-		box.SetOrientation(gtk.ORIENTATION_HORIZONTAL)
+		box.SetOrientation(gtk.OrientationHorizontal)
 	}
 
-	button, _ := gtk.ButtonNew()
+	button := gtk.NewButton()
 
 	image, _ := createImage(t.Class, imgSizeScaled)
 	if image == nil {
 		//var pixbuf *gdk.Pixbuf
 		//var err error
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
+		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
 			imgSizeScaled, imgSizeScaled)
 
 		if err == nil {
-			image, _ = gtk.ImageNewFromPixbuf(pixbuf)
+			image = gtk.NewImageFromPixbuf(pixbuf)
 		}
 	}
 
 	if image != nil {
 		button.SetImage(image)
-		button.SetImagePosition(gtk.POS_TOP)
+		button.SetImagePosition(gtk.PosTop)
 		button.SetAlwaysShowImage(true)
 	}
 	button.SetTooltipText(getName(t.Class))
 
 	var img *gtk.Image
-	var pixbuf *gdk.Pixbuf
+	var pixbuf *gdkpixbuf.Pixbuf
 	var err error
 	if len(instances) > 1 {
 		if !vertical {
-			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
 				imgSizeScaled, imgSizeScaled/8)
 		} else {
-			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple-vertical.svg"),
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple-vertical.svg"),
 				imgSizeScaled/8, imgSizeScaled)
 		}
 	} else if len(instances) == 1 {
 		if !vertical {
-			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
 				imgSizeScaled, imgSizeScaled/8)
 		} else {
-			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single-vertical.svg"),
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single-vertical.svg"),
 				imgSizeScaled/8, imgSizeScaled)
 		}
 	} else {
 		if !vertical {
-			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
 				imgSizeScaled, imgSizeScaled/8)
 		} else {
-			pixbuf, err = gdk.PixbufNewFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
 				imgSizeScaled/8, imgSizeScaled)
 		}
 	}
 	if err == nil {
-		img, _ = gtk.ImageNewFromPixbuf(pixbuf)
+		img = gtk.NewImageFromPixbuf(pixbuf)
 	}
 	if img != nil {
 		if *position == "left" || *position == "top" {
@@ -256,9 +257,9 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 
 	if len(instances) == 1 {
 		button.Connect("event", func(btn *gtk.Button, e *gdk.Event) bool {
-			btnEvent := gdk.EventButtonNewFromEvent(e)
-			if btnEvent.Type() == gdk.EVENT_BUTTON_RELEASE || btnEvent.Type() == gdk.EVENT_TOUCH_END {
-				if btnEvent.Button() == 1 || btnEvent.Type() == gdk.EVENT_TOUCH_END {
+			btnEvent := e.AsButton()
+			if btnEvent.Type() == gdk.ButtonReleaseType || btnEvent.Type() == gdk.TouchEndType {
+				if btnEvent.Button() == 1 || btnEvent.Type() == gdk.TouchEndType {
 					cmd := fmt.Sprintf("dispatch focuswindow address:%s", t.Address)
 					if strings.HasPrefix(t.Workspace.Name, "special") {
 						_, specialName, _ := strings.Cut(t.Workspace.Name, "special:")
@@ -286,7 +287,7 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 		})
 	} else {
 		button.Connect("button-release-event", func(btn *gtk.Button, e *gdk.Event) bool {
-			btnEvent := gdk.EventButtonNewFromEvent(e)
+			btnEvent := e.AsButton()
 			if btnEvent.Button() == 1 {
 				menu := clientMenu(t.Class, instances)
 				menu.PopupAtWidget(button, widgetAnchor, menuAnchor, nil)
@@ -307,16 +308,16 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 }
 
 func clientMenu(class string, instances []client) gtk.Menu {
-	menu, _ := gtk.MenuNew()
+	menu := gtk.NewMenu()
 
 	iconName, err := getIcon(class)
 	if err != nil {
 		log.Warn(err)
 	}
 	for _, instance := range instances {
-		menuItem, _ := gtk.MenuItemNew()
-		hbox, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 6)
-		image, _ := gtk.ImageNewFromIconName(iconName, gtk.ICON_SIZE_MENU)
+		menuItem := gtk.NewMenuItem()
+		hbox := gtk.NewBox(gtk.OrientationHorizontal, 6)
+		image := gtk.NewImageFromIconName(iconName, int(gtk.IconSizeMenu))
 		hbox.PackStart(image, false, false, 0)
 		title := instance.Title
 		if len(title) > 25 {
@@ -324,7 +325,7 @@ func clientMenu(class string, instances []client) gtk.Menu {
 		}
 		wsName := instance.Workspace.Name
 		var label *gtk.Label
-		label, _ = gtk.LabelNew(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
+		label = gtk.NewLabel(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
 		hbox.PackStart(label, false, false, 0)
 		menuItem.Add(hbox)
 		menu.Append(menuItem)
@@ -349,16 +350,16 @@ func clientMenu(class string, instances []client) gtk.Menu {
 }
 
 func clientMenuContext(class string, instances []client) gtk.Menu {
-	menu, _ := gtk.MenuNew()
+	menu := gtk.NewMenu()
 
 	iconName, err := getIcon(class)
 	if err != nil {
 		log.Warnf("%s %s", err, class)
 	}
 	for _, instance := range instances {
-		menuItem, _ := gtk.MenuItemNew()
-		hbox, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 6)
-		image, _ := gtk.ImageNewFromIconName(iconName, gtk.ICON_SIZE_MENU)
+		menuItem := gtk.NewMenuItem()
+		hbox := gtk.NewBox(gtk.OrientationHorizontal, 6)
+		image := gtk.NewImageFromIconName(iconName, int(gtk.IconSizeMenu))
 		hbox.PackStart(image, false, false, 0)
 		title := instance.Title
 		if len(title) > 25 {
@@ -371,15 +372,15 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 		//	}
 		//	return r
 		//}, title)
-		label, _ := gtk.LabelNew(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
+		label := gtk.NewLabel(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
 		hbox.PackStart(label, false, false, 0)
 		menuItem.Add(hbox)
 		menu.Append(menuItem)
-		submenu, _ := gtk.MenuNew()
+		submenu := gtk.NewMenu()
 
 		a := instance.Address
 
-		subitem, _ := gtk.MenuItemNewWithLabel("closewindow")
+		subitem := gtk.NewMenuItemWithLabel("closewindow")
 		submenu.Append(subitem)
 		subitem.Connect("activate", func() {
 			cmd := fmt.Sprintf("dispatch closewindow address:%s", a)
@@ -387,7 +388,7 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 			log.Debugf("%s -> %s", cmd, reply)
 		})
 
-		subitem, _ = gtk.MenuItemNewWithLabel("togglefloating")
+		subitem = gtk.NewMenuItemWithLabel("togglefloating")
 		submenu.Append(subitem)
 		subitem.Connect("activate", func() {
 			cmd := fmt.Sprintf("dispatch togglefloating address:%s", a)
@@ -395,7 +396,7 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 			log.Debugf("%s -> %s", cmd, reply)
 		})
 
-		subitem, _ = gtk.MenuItemNewWithLabel("fullscreen")
+		subitem = gtk.NewMenuItemWithLabel("fullscreen")
 		submenu.Append(subitem)
 		subitem.Connect("activate", func() {
 			cmd := fmt.Sprintf("dispatch fullscreen address:%s", a)
@@ -403,11 +404,11 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 			log.Debugf("%s -> %s", cmd, reply)
 		})
 
-		s, _ := gtk.SeparatorMenuItemNew()
-		submenu.Append(s)
+		s := gtk.NewSeparatorMenuItem()
+		submenu.Append(&s.MenuItem)
 
 		for i := 1; i < int(*numWS)+1; i++ {
-			subItem, _ := gtk.MenuItemNewWithLabel(fmt.Sprintf("-> WS %v", i))
+			subItem := gtk.NewMenuItemWithLabel(fmt.Sprintf("-> WS %v", i))
 			target := i
 			subItem.Connect("activate", func() {
 				cmd := fmt.Sprintf("dispatch movetoworkspace %v,address:%v", target, a)
@@ -419,16 +420,16 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 
 		menuItem.SetSubmenu(submenu)
 	}
-	separator, _ := gtk.SeparatorMenuItemNew()
-	menu.Append(separator)
+	separator := gtk.NewSeparatorMenuItem()
+	menu.Append(&separator.MenuItem)
 
-	item, _ := gtk.MenuItemNewWithLabel("New window")
+	item := gtk.NewMenuItemWithLabel("New window")
 	item.Connect("activate", func() {
 		launch(class)
 	})
 	menu.Append(item)
 
-	closeAllWindows, _ := gtk.MenuItemNew()
+	closeAllWindows := gtk.NewMenuItem()
 	closeAllWindows.SetLabel("Close all windows")
 	closeAllWindows.Connect("activate", func() {
 		for _, instance := range instances {
@@ -440,7 +441,7 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 	})
 	menu.Append(closeAllWindows)
 
-	pinItem, _ := gtk.MenuItemNew()
+	pinItem := gtk.NewMenuItem()
 	if !inPinned(class) {
 		pinItem.SetLabel("Pin")
 		pinItem.Connect("activate", func() {
@@ -487,14 +488,14 @@ func createImage(appID string, size int) (*gtk.Image, error) {
 	if e != nil {
 		return nil, err
 	}
-	image, _ := gtk.ImageNewFromPixbuf(pixbuf)
+	image := gtk.NewImageFromPixbuf(pixbuf)
 
 	return image, nil
 }
 
-func createPixbuf(icon string, size int) (*gdk.Pixbuf, error) {
+func createPixbuf(icon string, size int) (*gdkpixbuf.Pixbuf, error) {
 	if strings.HasPrefix(icon, "/") {
-		pixbuf, err := gdk.PixbufNewFromFileAtSize(icon, size, size)
+		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(icon, size, size)
 		if err != nil {
 			log.Errorf("%s", err)
 			return nil, err
@@ -502,11 +503,8 @@ func createPixbuf(icon string, size int) (*gdk.Pixbuf, error) {
 		return pixbuf, nil
 	}
 
-	iconTheme, err := gtk.IconThemeGetDefault()
-	if err != nil {
-		log.Fatal("Couldn't get default theme: ", err)
-	}
-	pixbuf, err := iconTheme.LoadIcon(icon, size, gtk.ICON_LOOKUP_FORCE_SIZE)
+	iconTheme := gtk.IconThemeGetDefault()
+	pixbuf, err := iconTheme.LoadIcon(icon, size, gtk.IconLookupForceSize)
 	if err != nil {
 		ico, err := getIcon(icon)
 		if err != nil {
@@ -514,14 +512,14 @@ func createPixbuf(icon string, size int) (*gdk.Pixbuf, error) {
 		}
 
 		if strings.HasPrefix(ico, "/") {
-			pixbuf, err := gdk.PixbufNewFromFileAtSize(ico, size, size)
+			pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(ico, size, size)
 			if err != nil {
 				return nil, err
 			}
 			return pixbuf, nil
 		}
 
-		pixbuf, err := iconTheme.LoadIcon(ico, size, gtk.ICON_LOOKUP_FORCE_SIZE)
+		pixbuf, err := iconTheme.LoadIcon(ico, size, gtk.IconLookupForceSize)
 		if err != nil {
 			return nil, err
 		}
@@ -953,14 +951,14 @@ func mapOutputs() (map[string]*gdk.Monitor, error) {
 		log.Fatalf("Error listing monitors: %v", err)
 	}
 
-	display, err := gdk.DisplayGetDefault()
+	display := gdk.DisplayGetDefault()
 	if err != nil {
 		log.Fatalf("Error finding default GDK display: %v", err)
 	}
 
-	num := display.GetNMonitors()
+	num := display.NMonitors()
 	for i := 0; i < num; i++ {
-		mon, _ := display.GetMonitor(i)
+		mon := display.Monitor(i)
 		result[monitors[i].Name] = mon
 	}
 	return result, nil
@@ -968,14 +966,11 @@ func mapOutputs() (map[string]*gdk.Monitor, error) {
 
 func listGdkMonitors() ([]gdk.Monitor, error) {
 	var monitors []gdk.Monitor
-	display, err := gdk.DisplayGetDefault()
-	if err != nil {
-		return nil, err
-	}
+	display := gdk.DisplayGetDefault()
 
-	num := display.GetNMonitors()
+	num := display.NMonitors()
 	for i := 0; i < num; i++ {
-		monitor, _ := display.GetMonitor(i)
+		monitor := display.Monitor(i)
 		monitors = append(monitors, *monitor)
 	}
 	return monitors, nil
