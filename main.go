@@ -641,7 +641,19 @@ func main() {
 
 		mRefProvider := gtk.NewCSSProvider()
 		css := "window { background-color: rgba (0, 0, 0, 0); border: none}"
-		err := mRefProvider.LoadFromData(css)
+		hotspotCssFile := filepath.Join(configDirectory, "hotspot.css")
+		if !pathExists(hotspotCssFile) {
+			_ = mRefProvider.LoadFromData(css)
+			log.Infof("Optional '%s' file not found, using internal definition", hotspotCssFile)
+		} else {
+			err := mRefProvider.LoadFromPath(hotspotCssFile)
+			if err == nil {
+				log.Infof("Hotspot css loaded from %s", hotspotCssFile)
+			} else {
+				log.Warnf("Error loading hotspot css from %s", hotspotCssFile)
+			}
+		}
+
 		if err != nil {
 			log.Warn(err)
 		}
