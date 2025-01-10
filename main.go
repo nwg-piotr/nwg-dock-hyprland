@@ -28,7 +28,7 @@ import (
 	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 )
 
-const version = "0.4.1"
+const version = "0.4.2"
 
 type WindowState int
 
@@ -323,10 +323,11 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 
 	gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerOverlay)
 
-	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeTop, *marginTop)
-	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeLeft, *marginLeft)
-	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeRight, *marginRight)
-	gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeBottom, *marginBottom)
+	// resolve #65
+	// gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeTop, *marginTop)
+	// gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeLeft, *marginLeft)
+	// gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeRight, *marginRight)
+	// gtklayershell.SetMargin(win, gtklayershell.LayerShellEdgeBottom, *marginBottom)
 
 	gtklayershell.SetExclusiveZone(win, -1)
 
