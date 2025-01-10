@@ -59,6 +59,7 @@ var (
 	widgetAnchor, menuAnchor           gdk.Gravity
 	win                                *gtk.Window
 	windowStateChannel                 chan WindowState = make(chan WindowState, 1)
+	classesToIgnore                    []string
 )
 
 // Flags
@@ -69,6 +70,7 @@ var debug = flag.Bool("debug", false, "turn on debug messages")
 var displayVersion = flag.Bool("v", false, "display Version information")
 var exclusive = flag.Bool("x", false, "set eXclusive zone: move other windows aside; overrides the \"-l\" argument")
 var full = flag.Bool("f", false, "take Full screen width/height")
+var ignoreClasses = flag.String("g", "", "quote-delimited, space-separated class list to iGnore in the dock")
 var hotspotDelay = flag.Int64("hd", 20, "Hotspot Delay [ms]; the smaller, the faster mouse pointer needs to enter hotspot for the dock to appear; set 0 to disable")
 var ico = flag.String("ico", "", "alternative name or path for the launcher ICOn")
 var ignoreWorkspaces = flag.String("iw", "", "Ignore the running applications on these Workspaces based on the workspace's name or id, e.g. \"special,10\"")
@@ -161,31 +163,39 @@ func buildMainBox() {
 	var alreadyAdded []string
 	for _, pin := range pinned {
 		if !inTasks(pin) {
-			button := pinnedButton(pin, position)
-			mainBox.PackStart(button, false, false, 0)
+			if !isIn(classesToIgnore, pin) {
+				button := pinnedButton(pin, position)
+				mainBox.PackStart(button, false, false, 0)
+			} else {
+				log.Debugf("Ignoring pin '%s'", pin)
+			}
 		} else {
 			instances := taskInstances(pin)
 			c := instances[0]
-			if len(instances) == 1 {
-				button := taskButton(c, instances, position)
-				mainBox.PackStart(button, false, false, 0)
-				if c.Class == activeClient.Class && !*autohide {
-					button.SetObjectProperty("name", "active")
+			if !isIn(classesToIgnore, c.Class) {
+				if len(instances) == 1 {
+					button := taskButton(c, instances, position)
+					mainBox.PackStart(button, false, false, 0)
+					if c.Class == activeClient.Class && !*autohide {
+						button.SetObjectProperty("name", "active")
+					} else {
+						button.SetObjectProperty("name", "")
+					}
+				} else if !isIn(alreadyAdded, c.Class) {
+					button := taskButton(c, instances, position)
+					mainBox.PackStart(button, false, false, 0)
+					if c.Class == activeClient.Class && !*autohide {
+						button.SetObjectProperty("name", "active")
+					} else {
+						button.SetObjectProperty("name", "")
+					}
+					alreadyAdded = append(alreadyAdded, c.Class)
+					clientMenu(c.Class, instances)
 				} else {
-					button.SetObjectProperty("name", "")
+					continue
 				}
-			} else if !isIn(alreadyAdded, c.Class) {
-				button := taskButton(c, instances, position)
-				mainBox.PackStart(button, false, false, 0)
-				if c.Class == activeClient.Class && !*autohide {
-					button.SetObjectProperty("name", "active")
-				} else {
-					button.SetObjectProperty("name", "")
-				}
-				alreadyAdded = append(alreadyAdded, c.Class)
-				clientMenu(c.Class, instances)
 			} else {
-				continue
+				log.Debugf("Ignoring instance '%s'", c.Class)
 			}
 		}
 	}
@@ -196,26 +206,30 @@ func buildMainBox() {
 		// Let's filter the ghosts out.
 		if !inPinned(t.Class) && t.Class != "" {
 			instances := taskInstances(t.Class)
-			if len(instances) == 1 {
-				button := taskButton(t, instances, position)
-				mainBox.PackStart(button, false, false, 0)
-				if t.Class == activeClient.Class && !*autohide {
-					button.SetObjectProperty("name", "active")
+			if !isIn(classesToIgnore, t.Class) {
+				if len(instances) == 1 {
+					button := taskButton(t, instances, position)
+					mainBox.PackStart(button, false, false, 0)
+					if t.Class == activeClient.Class && !*autohide {
+						button.SetObjectProperty("name", "active")
+					} else {
+						button.SetObjectProperty("name", "")
+					}
+				} else if !isIn(alreadyAdded, t.Class) {
+					button := taskButton(t, instances, position)
+					mainBox.PackStart(button, false, false, 0)
+					if t.Class == activeClient.Class && !*autohide {
+						button.SetObjectProperty("name", "active")
+					} else {
+						button.SetObjectProperty("name", "")
+					}
+					alreadyAdded = append(alreadyAdded, t.Class)
+					clientMenu(t.Class, instances)
 				} else {
-					button.SetObjectProperty("name", "")
+					continue
 				}
-			} else if !isIn(alreadyAdded, t.Class) {
-				button := taskButton(t, instances, position)
-				mainBox.PackStart(button, false, false, 0)
-				if t.Class == activeClient.Class && !*autohide {
-					button.SetObjectProperty("name", "active")
-				} else {
-					button.SetObjectProperty("name", "")
-				}
-				alreadyAdded = append(alreadyAdded, t.Class)
-				clientMenu(t.Class, instances)
 			} else {
-				continue
+				log.Debugf("Ignoring '%s'", t.Class)
 			}
 		}
 	}
@@ -368,6 +382,10 @@ func main() {
 	}
 	if *resident {
 		log.Info("Starting in resident mode")
+	}
+	if *ignoreClasses != "" {
+		log.Infof("Ignoring classes: '%s'", *ignoreClasses)
+		classesToIgnore = strings.Split(*ignoreClasses, " ")
 	}
 
 	// Gentle SIGTERM handler thanks to reiki4040 https://gist.github.com/reiki4040/be3705f307d3cd136e85
