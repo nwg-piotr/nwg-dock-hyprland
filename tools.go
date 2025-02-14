@@ -804,7 +804,7 @@ func getName(appName string) string {
 				return name
 			}
 			for _, line := range lines {
-				if strings.HasPrefix(strings.ToUpper(line), "NAME") {
+				if strings.HasPrefix(strings.ToUpper(line), "NAME=") {
 					name = line[5:]
 					break
 				}
