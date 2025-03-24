@@ -978,7 +978,7 @@ func listGdkMonitors() ([]gdk.Monitor, error) {
 
 // Returns output of a CLI command with optional arguments
 func getCommandOutput(command string) string {
-	out, err := exec.Command("sh", "-c", command).Output()
+	out, err := exec.Command("env", "-S", command).Output()
 	if err != nil {
 		return ""
 	}
