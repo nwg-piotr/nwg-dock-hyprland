@@ -734,6 +734,23 @@ func searchDesktopDirs(badAppID string) string {
 				return filepath.Join(d, item.Name())
 			}
 		}
+
+		for _, item := range items {
+			if item.IsDir() {
+				continue
+			}
+
+			p := filepath.Join(d, item.Name())
+			lines, err := readTextFile(p)
+
+			if err != nil {
+				log.Warn(err)
+			} else {
+				if strings.Contains(lines, "StartupWMClass="+b4Separator) {
+					return filepath.Join(d, item.Name())
+				}
+			}
+		}
 	}
 	return ""
 }
