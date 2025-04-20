@@ -743,9 +743,9 @@ func getExec(appName string) (string, error) {
 	if strings.HasPrefix(strings.ToUpper(appName), "GIMP") {
 		cmd = "gimp"
 	}
+	path := ""
 	for _, d := range appDirs {
 		files, _ := os.ReadDir(d)
-		path := ""
 		for _, f := range files {
 			if strings.HasSuffix(f.Name(), ".desktop") {
 				if f.Name() == fmt.Sprintf("%s.desktop", appName) ||
@@ -755,39 +755,41 @@ func getExec(appName string) (string, error) {
 				}
 			}
 		}
-
-		// as above in getIcon - for tasks w/ improper app_id
-		if path == "" {
-			path = searchDesktopDirs(appName)
-		}
-
-		if path != "" {
-			lines, err := loadTextFile(path)
-			if err != nil {
-				return "", err
-			}
-			for _, line := range lines {
-				if strings.HasPrefix(strings.ToUpper(line), "EXEC") {
-					l := line[5:]
-					cutAt := strings.Index(l, "%")
-					if cutAt != -1 {
-						l = l[:cutAt-1]
-					}
-					cmd = l
-					break
-				}
-			}
-			return cmd, nil
-		}
 	}
+
+	// as above in getIcon - for tasks w/ improper app_id
+	if path == "" {
+		path = searchDesktopDirs(appName)
+	}
+
+	if path != "" {
+		lines, err := loadTextFile(path)
+		if err != nil {
+			return "", err
+		}
+		for _, line := range lines {
+			if strings.HasPrefix(strings.ToUpper(line), "EXEC") {
+				l := line[5:]
+				cutAt := strings.Index(l, "%")
+				if cutAt != -1 {
+					l = l[:cutAt-1]
+				}
+				cmd = l
+				break
+			}
+		}
+		return cmd, nil
+	}
+
 	return cmd, nil
 }
 
 func getName(appName string) string {
 	name := appName
+	path := ""
+
 	for _, d := range appDirs {
 		files, _ := os.ReadDir(d)
-		path := ""
 		for _, f := range files {
 			if strings.HasSuffix(f.Name(), ".desktop") {
 				if f.Name() == fmt.Sprintf("%s.desktop", appName) ||
@@ -797,20 +799,26 @@ func getName(appName string) string {
 				}
 			}
 		}
+	}
 
-		if path != "" {
-			lines, err := loadTextFile(path)
-			if err != nil {
-				return name
-			}
-			for _, line := range lines {
-				if strings.HasPrefix(strings.ToUpper(line), "NAME=") {
-					name = line[5:]
-					break
-				}
+	// as above in getIcon - for tasks w/ improper app_id
+	if path == "" {
+		path = searchDesktopDirs(appName)
+	}
+
+	if path != "" {
+		lines, err := loadTextFile(path)
+		if err != nil {
+			return name
+		}
+		for _, line := range lines {
+			if strings.HasPrefix(strings.ToUpper(line), "NAME=") {
+				name = line[5:]
+				break
 			}
 		}
 	}
+
 	return name
 }
 
