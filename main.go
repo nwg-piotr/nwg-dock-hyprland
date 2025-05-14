@@ -546,11 +546,18 @@ func main() {
 	gtklayershell.SetNamespace(win, "nwg-dock")
 
 	var output2mon map[string]*gdk.Monitor
+	output2mon, err = mapOutputs()
+	_, targetOutputExists := output2mon[*targetOutput]
+	if !targetOutputExists {
+		log.Warnf("Target output '%s' not found, ignoring", *targetOutput)
+	}
+
 	if *targetOutput != "" {
 		// We want to assign gtklayershell to a monitor, but we only know the output name!
-		output2mon, err = mapOutputs()
 		if err == nil {
-			gtklayershell.SetMonitor(win, output2mon[*targetOutput])
+			if targetOutputExists {
+				gtklayershell.SetMonitor(win, output2mon[*targetOutput])
+			}
 		} else {
 			log.Warn(fmt.Sprintf("Couldn't assign gtklayershell to monitor: %s", err))
 		}
@@ -682,7 +689,7 @@ func main() {
 			log.Warn(err)
 		}
 
-		if *targetOutput == "" {
+		if *targetOutput == "" || !targetOutputExists {
 			// hot spots on all displays
 			monitors, _ := listGdkMonitors()
 			for _, monitor := range monitors {
@@ -697,7 +704,6 @@ func main() {
 			// hot spot on the selected display only
 			monitor := output2mon[*targetOutput]
 			win := setupHotSpot(*monitor, win)
-
 			ctx := win.StyleContext()
 			ctx.AddProvider(mRefProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
