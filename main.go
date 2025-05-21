@@ -88,6 +88,7 @@ var numWS = flag.Int64("w", 10, "number of Workspaces you use")
 var position = flag.String("p", "bottom", "Position: \"bottom\", \"top\" \"left\" or \"right\"")
 var resident = flag.Bool("r", false, "Leave the program resident, but w/o hotspot")
 var targetOutput = flag.String("o", "", "name of Output to display the dock on")
+var allowMultipleInstances = flag.Bool("m", false, "allow Multiple instances of the dock")
 
 var vertical bool
 var alignmentBox *gtk.Box
@@ -458,29 +459,35 @@ func main() {
 		}
 	}()
 
-	// Unless we are in autohide/resident mode, we probably want the same key/mouse binding to turn the dock off.
-	// Since v0.2 we can't just send SIGKILL if running instance found. We'll send SIGUSR1 instead.
-	// If it's running with `-r` or `-d` flag, it'll show the window. If not - it will die.
+	var err error
+	if !*allowMultipleInstances {
+		log.Debug("Allowing only one instance of nwg-dock-hyprland")
+		// If running instance found, send sigToggle to it.
+		// If it's running with `-r` or `-d` flag, it'll show/hide the window.
+		// Otherwise, it'll ignore the signal.
 
-	// Use md5-hashed $USER name to create unique lock files for multiple users
-	lockFilePath := fmt.Sprintf("%s/nwg-dock-%s.lock", tempDir(), md5Hash(os.Getenv("USER")))
-	lockFile, err := singleinstance.CreateLockFile(lockFilePath)
-	if err != nil {
-		pid, err := readTextFile(lockFilePath)
-		if err == nil {
-			i, err := strconv.Atoi(pid)
+		// Use md5-hashed $USER name to create unique lock files for multiple users
+		lockFilePath := fmt.Sprintf("%s/nwg-dock-%s.lock", tempDir(), md5Hash(os.Getenv("USER")))
+		lockFile, e := singleinstance.CreateLockFile(lockFilePath)
+		if e != nil {
+			pid, err := readTextFile(lockFilePath)
 			if err == nil {
-				if *autohide || *resident {
-					log.Info("Running instance found, terminating...")
-				} else {
-					_ = syscall.Kill(i, sigToggle)
-					log.Info("Sending sigToggle to running instance and bye, bye!")
+				i, err := strconv.Atoi(pid)
+				if err == nil {
+					if *autohide || *resident {
+						log.Info("Running instance found, terminating...")
+					} else {
+						_ = syscall.Kill(i, sigToggle)
+						log.Info("Sending sigToggle to running instance and bye, bye!")
+					}
 				}
+			} else {
+				log.Warnf("Error reading lock file: %s at %s", err, lockFilePath)
 			}
+			os.Exit(0)
 		}
-		os.Exit(0)
+		defer lockFile.Close()
 	}
-	defer lockFile.Close()
 
 	if !*noLauncher && *launcherCmd == "" {
 		if isCommand("nwg-drawer") {
@@ -549,7 +556,13 @@ func main() {
 	output2mon, err = mapOutputs()
 	_, targetOutputExists := output2mon[*targetOutput]
 	if !targetOutputExists {
-		log.Warnf("Target output '%s' not found, ignoring", *targetOutput)
+		if *targetOutput != "" {
+			log.Warnf("Target output '%s' not found, ignoring", *targetOutput)
+		} else {
+			log.Debug("No target output specified, using the focused one")
+		}
+	} else {
+		log.Debugf("Creating widow on specified output: %s", *targetOutput)
 	}
 
 	if *targetOutput != "" {
