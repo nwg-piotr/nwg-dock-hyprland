@@ -88,7 +88,7 @@ var numWS = flag.Int64("w", 10, "number of Workspaces you use")
 var position = flag.String("p", "bottom", "Position: \"bottom\", \"top\" \"left\" or \"right\"")
 var resident = flag.Bool("r", false, "Leave the program resident, but w/o hotspot")
 var targetOutput = flag.String("o", "", "name of Output to display the dock on")
-var allowMultipleInstances = flag.Bool("m", false, "allow Multiple instances of the dock")
+var allowMultipleInstances = flag.Bool("m", false, "allow Multiple instances of the dock (skip lock file check)")
 
 var vertical bool
 var alignmentBox *gtk.Box

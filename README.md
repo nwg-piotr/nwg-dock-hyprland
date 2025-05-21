@@ -93,13 +93,17 @@ Usage of nwg-dock-hyprland:
   -a string
     	Alignment in full width/height: "start", "center" or "end" (default "center")
   -c string
-    	Command assigned to the launcher button
+    	Command assigned to the launcher button (default "nwg-drawer")
   -d	auto-hiDe: show dock when hotspot hovered, close when left or a button clicked
   -debug
     	turn on debug messages
   -f	take Full screen width/height
+  -g string
+    	quote-delimited, space-separated class list to iGnore in the dock
   -hd int
     	Hotspot Delay [ms]; the smaller, the faster mouse pointer needs to enter hotspot for the dock to appear; set 0 to disable (default 20)
+  -hl string
+    	Hotspot Layer "overlay" or "top" (default "overlay")
   -i int
     	Icon size (default 48)
   -ico string
@@ -110,6 +114,7 @@ Usage of nwg-dock-hyprland:
     	Layer "overlay", "top" or "bottom" (default "overlay")
   -lp string
     	Launcher button position, 'start' or 'end' (default "end")
+  -m	allow Multiple instances of the dock (skip lock file check)
   -mb int
     	Margin Bottom
   -ml int
@@ -123,7 +128,7 @@ Usage of nwg-dock-hyprland:
   -o string
     	name of Output to display the dock on
   -p string
-    	Position: "bottom", "top" or "left" (default "bottom")
+    	Position: "bottom", "top" "left" or "right" (default "bottom")
   -r	Leave the program resident, but w/o hotspot
   -s string
     	Styling: css file name (default "style.css")
