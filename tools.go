@@ -20,7 +20,7 @@ import (
 func taskInstances(ID string) []client {
 	var found []client
 	for _, c := range clients {
-		if strings.Contains(strings.ToUpper(c.Class), strings.ToUpper(ID)) {
+		if strings.ToUpper(c.Class) == strings.ToUpper(ID) {
 			found = append(found, c)
 		}
 	}
