@@ -130,7 +130,7 @@ Usage of nwg-dock-hyprland:
   -p string
     	Position: "bottom", "top" "left" or "right" (default "bottom")
   -pi string
-    	file with PInned launchers separated with newlines (default "pinned")
+    	file with PInned launchers separated with newlines
   -r	Leave the program resident, but w/o hotspot
   -s string
     	Styling: css file name (default "style.css")

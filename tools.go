@@ -528,6 +528,17 @@ func createPixbuf(icon string, size int) (*gdkpixbuf.Pixbuf, error) {
 	return pixbuf, nil
 }
 
+func cacheDir() string {
+	if os.Getenv("XDG_CACHE_HOME") != "" {
+		return os.Getenv("XDG_CACHE_HOME")
+	}
+	if os.Getenv("HOME") != "" && pathExists(filepath.Join(os.Getenv("HOME"), ".cache")) {
+		p := filepath.Join(os.Getenv("HOME"), ".cache")
+		return p
+	}
+	return ""
+}
+
 func tempDir() string {
 	if os.Getenv("TMPDIR") != "" {
 		return os.Getenv("TMPDIR")
