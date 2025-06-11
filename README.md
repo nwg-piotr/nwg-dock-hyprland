@@ -129,6 +129,8 @@ Usage of nwg-dock-hyprland:
     	name of Output to display the dock on
   -p string
     	Position: "bottom", "top" "left" or "right" (default "bottom")
+  -pi string
+    	file with PInned launchers separated with newlines
   -r	Leave the program resident, but w/o hotspot
   -s string
     	Styling: css file name (default "style.css")
