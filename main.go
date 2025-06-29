@@ -684,7 +684,7 @@ func main() {
 		glib.TimeoutAdd(uint(500), win.Hide)
 
 		mRefProvider := gtk.NewCSSProvider()
-		css := "window { background-color: rgba (0, 0, 0, 0); border: none}"
+		css := "window { all: unset; }"
 		hotspotCssFile := filepath.Join(configDirectory, "hotspot.css")
 		if !pathExists(hotspotCssFile) {
 			_ = mRefProvider.LoadFromData(css)
