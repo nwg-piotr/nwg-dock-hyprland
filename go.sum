@@ -9,10 +9,6 @@ github.com/diamondburned/gotk4-layer-shell/pkg v0.0.0-20240109211357-6efa9f6dc43
 github.com/diamondburned/gotk4-layer-shell/pkg v0.0.0-20240109211357-6efa9f6dc438/go.mod h1:AjrxxF6teeNWgaEg0zIUwoqFtXlVTHlEGZvrOn7RXaQ=
 github.com/diamondburned/gotk4/pkg v0.3.1 h1:uhkXSUPUsCyz3yujdvl7DSN8jiLS2BgNTQE95hk6ygg=
 github.com/diamondburned/gotk4/pkg v0.3.1/go.mod h1:DqeOW+MxSZFg9OO+esk4JgQk0TiUJJUBfMltKhG+ub4=
-github.com/joshuarubin/go-sway v1.2.0 h1:t3eqW504//uj9PDwFf0+IVfkD+WoOGaDX5gYIe0BHyM=
-github.com/joshuarubin/go-sway v1.2.0/go.mod h1:qcDd6f25vJ0++wICwA1BainIcRC67p2Mb4lsrZ0k3/k=
-github.com/joshuarubin/lifecycle v1.0.0 h1:N/lPEC8f+dBZ1Tn99vShqp36LwB+LI7XNAiNadZeLUQ=
-github.com/joshuarubin/lifecycle v1.0.0/go.mod h1:sRy++ATvR9Ee21tkRdFkQeywAWvDsue66V70K0Dnl54=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
