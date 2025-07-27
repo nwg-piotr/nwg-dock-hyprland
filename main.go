@@ -60,6 +60,8 @@ var (
 	win                                *gtk.Window
 	windowStateChannel                 chan WindowState = make(chan WindowState, 1)
 	classesToIgnore                    []string
+	mouseInsideDock                    bool
+	mouseInsideHotspot                 bool
 )
 
 // Flags
@@ -327,6 +329,21 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 		gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerTop)
 	} else {
 		gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerOverlay)
+	}
+
+	if *autohide {
+		win.Connect("leave-notify-event", func() {
+			mouseInsideHotspot = false
+			glib.TimeoutAdd(1000, func() bool {
+				if !mouseInsideDock && !mouseInsideHotspot {
+					dockWindow.Hide()
+				}
+				return false
+			})
+		})
+		win.Connect("enter-notify-event", func() {
+			mouseInsideHotspot = true
+		})
 	}
 
 	// resolve #65
@@ -640,6 +657,7 @@ func main() {
 	win.Connect("leave-notify-event", func() {
 		if *autohide {
 			src = glib.TimeoutAdd(uint(1000), func() bool {
+				mouseInsideDock = false
 				win.Hide()
 				src = 0
 				return false
@@ -648,6 +666,7 @@ func main() {
 	})
 
 	win.Connect("enter-notify-event", func() {
+		mouseInsideDock = true
 		cancelClose()
 	})
 
