@@ -74,7 +74,7 @@ var exclusive = flag.Bool("x", false, "set eXclusive zone: move other windows as
 var full = flag.Bool("f", false, "take Full screen width/height")
 var ignoreClasses = flag.String("g", "", "quote-delimited, space-separated class list to iGnore in the dock")
 var hotspotDelay = flag.Int64("hd", 20, "Hotspot Delay [ms]; the smaller, the faster mouse pointer needs to enter hotspot for the dock to appear; set 0 to disable")
-var hotspotLayer = flag.String("hl", "overlay", "Hotspot Layer \"overlay\" or \"top\"")
+var hotspotLayer = flag.String("hl", "overlay", "Hotspot Layer \"overlay\", \"top\" or \"bottom\"")
 var ico = flag.String("ico", "", "alternative name or path for the launcher ICOn")
 var ignoreWorkspaces = flag.String("iw", "", "Ignore the running applications on these Workspaces based on the workspace's name or id, e.g. \"special,10\"")
 var imgSize = flag.Int("i", 48, "Icon size")
@@ -327,6 +327,8 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 
 	if *hotspotLayer == "top" {
 		gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerTop)
+	} else if *hotspotLayer == "bottom" {
+		gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerBottom)
 	} else {
 		gtklayershell.SetLayer(win, gtklayershell.LayerShellLayerOverlay)
 	}
