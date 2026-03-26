@@ -960,6 +960,8 @@ func launch(ID string) {
 
 	if err := cmd.Start(); err != nil {
 		log.Error("Unable to launch command!", err.Error())
+	} else {
+		go cmd.Wait() // Reap child process to prevent zombie
 	}
 
 	if *autohide {
