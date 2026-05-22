@@ -327,85 +327,59 @@ func clientMenu(class string, instances []client) gtk.Menu {
 	return *menu
 }
 
+func clientMenuContextActions(clientAddress string, submenu *gtk.Menu) {
+	workspaceSubitem := gtk.NewMenuItemWithLabel("Move to workspace")
+	workspaceSubmenu := gtk.NewMenu()
+
+	for i := 1; i < int(*numWS)+1; i++ {
+		workspace := gtk.NewMenuItemWithLabel(fmt.Sprintf("%v", i))
+		workspace.Connect("activate", func() {
+			moveWindowToWorkspace(clientAddress, i)
+		})
+
+		workspaceSubmenu.Append(workspace)
+	}
+
+	workspaceSubitem.SetSubmenu(workspaceSubmenu)
+	workspaceSubitemIsAppended := false
+
+	if *position == "top" || *position == "bottom" {
+		submenu.Append(workspaceSubitem)
+		workspaceSubitemIsAppended = true
+	}
+
+	subitem := gtk.NewMenuItemWithLabel("Close window")
+	subitem.Connect("activate", func() {
+		closeWindow(clientAddress)
+	})
+
+	submenu.Append(subitem)
+
+	subitem = gtk.NewMenuItemWithLabel("Toggle floating")
+
+	subitem.Connect("activate", func() {
+		toggleFloatingWindow(clientAddress)
+		focusWindow(clientAddress)
+	})
+
+	submenu.Append(subitem)
+
+	subitem = gtk.NewMenuItemWithLabel("Fullscreen")
+	submenu.Append(subitem)
+	subitem.Connect("activate", func() {
+		toggleFullscreenWindow(clientAddress)
+		focusWindow(clientAddress)
+	})
+
+	if !workspaceSubitemIsAppended {
+		submenu.Append(workspaceSubitem)
+	}
+}
+
 func clientMenuContext(class string, instances []client) gtk.Menu {
 	menu := gtk.NewMenu()
-
-	iconName, err := getIcon(class)
-	if err != nil {
-		log.Warnf("%s %s", err, class)
-	}
-	for _, instance := range instances {
-		menuItem := gtk.NewMenuItem()
-		hbox := gtk.NewBox(gtk.OrientationHorizontal, 6)
-		image := gtk.NewImageFromIconName(iconName, int(gtk.IconSizeMenu))
-		hbox.PackStart(image, false, false, 0)
-		title := instance.Title
-
-		if len(title) > 25 {
-			title = title[:25]
-		}
-
-		label := gtk.NewLabel(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
-		hbox.PackStart(label, false, false, 0)
-		menuItem.Add(hbox)
-		menu.Append(menuItem)
-		submenu := gtk.NewMenu()
-
-		a := instance.Address
-
-		subitem := gtk.NewMenuItemWithLabel("closewindow")
-		submenu.Append(subitem)
-		subitem.Connect("activate", func() {
-			closeWindow(a)
-		})
-
-		subitem = gtk.NewMenuItemWithLabel("togglefloating")
-		submenu.Append(subitem)
-		subitem.Connect("activate", func() {
-			toggleFloatingWindow(a)
-			focusWindow(a)
-		})
-
-		subitem = gtk.NewMenuItemWithLabel("fullscreen")
-		submenu.Append(subitem)
-		subitem.Connect("activate", func() {
-			toggleFullscreenWindow(a)
-			focusWindow(a)
-		})
-
-		s := gtk.NewSeparatorMenuItem()
-		submenu.Append(&s.MenuItem)
-
-		for i := 1; i < int(*numWS)+1; i++ {
-			subItem := gtk.NewMenuItemWithLabel(fmt.Sprintf("-> WS %v", i))
-			target := i
-			subItem.Connect("activate", func() {
-				moveWindowToWorkspace(a, target)
-			})
-			submenu.Append(subItem)
-		}
-
-		menuItem.SetSubmenu(submenu)
-	}
-	separator := gtk.NewSeparatorMenuItem()
-	menu.Append(&separator.MenuItem)
-
-	item := gtk.NewMenuItemWithLabel("New window")
-	item.Connect("activate", func() {
-		launch(class)
-	})
-	menu.Append(item)
-
-	closeAllWindows := gtk.NewMenuItem()
-	closeAllWindows.SetLabel("Close all windows")
-	closeAllWindows.Connect("activate", func() {
-		for _, instance := range instances {
-			closeWindow(instance.Address)
-		}
-	})
-	menu.Append(closeAllWindows)
-
 	pinItem := gtk.NewMenuItem()
+
 	if !inPinned(class) {
 		pinItem.SetLabel("Pin")
 		pinItem.Connect("activate", func() {
@@ -419,7 +393,64 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 			unpinTask(class)
 		})
 	}
+
 	menu.Append(pinItem)
+
+	item := gtk.NewMenuItemWithLabel("New window")
+	item.Connect("activate", func() {
+		launch(class)
+	})
+
+	menu.Append(item)
+
+	if len(instances) > 1 {
+		closeAllWindows := gtk.NewMenuItem()
+		closeAllWindows.SetLabel("Close all windows")
+
+		closeAllWindows.Connect("activate", func() {
+			for _, instance := range instances {
+				closeWindow(instance.Address)
+			}
+		})
+
+		menu.Append(closeAllWindows)
+	}
+
+	if len(instances) > 1 {
+		iconName, err := getIcon(class)
+		if err != nil {
+			log.Warnf("%s %s", err, class)
+		}
+
+		for _, instance := range instances {
+			menuItem := gtk.NewMenuItem()
+			hbox := gtk.NewBox(gtk.OrientationHorizontal, 6)
+			image := gtk.NewImageFromIconName(iconName, int(gtk.IconSizeMenu))
+			hbox.PackStart(image, false, false, 0)
+
+			title := instance.Title
+
+			if len(title) > 25 { // Trim title
+				title = title[:25]
+			}
+
+			contextSubMenu := gtk.NewMenu()
+			clientMenuContextActions(instance.Address, contextSubMenu)
+
+			label := gtk.NewLabel(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
+			hbox.PackStart(label, false, false, 0)
+			menuItem.Add(hbox)
+			menuItem.SetSubmenu(contextSubMenu)
+
+			if *position == "top" || *position == "bottom" {
+				menu.Prepend(menuItem)
+			} else {
+				menu.Append(menuItem)
+			}
+		}
+	} else {
+		clientMenuContextActions(instances[0].Address, menu)
+	}
 
 	menu.ShowAll()
 	return *menu
