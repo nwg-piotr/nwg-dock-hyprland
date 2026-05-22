@@ -60,15 +60,19 @@ func pinnedButton(ID string, position *string) *gtk.Box {
 
 	button.Connect("button-release-event", func(btn *gtk.Button, e *gdk.Event) bool {
 		btnEvent := e.AsButton()
+
 		if btnEvent.Button() == 1 || btnEvent.Button() == 2 {
 			launch(ID)
-			return true
 		} else if btnEvent.Button() == 3 {
 			contextMenu := pinnedMenuContext(ID)
 			contextMenu.PopupAtWidget(button, widgetAnchor, menuAnchor, nil)
-			return true
+
+			contextMenu.Connect("hide", func() {
+				btn.UnsetStateFlags(gtk.StateFlagPrelight)
+			})
 		}
-		return false
+
+		return true
 	})
 
 	button.Connect("enter-notify-event", cancelClose)
@@ -252,8 +256,8 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 			box.PackStart(button, false, false, 0)
 			box.PackStart(img, false, false, 0)
 		}
-
 	}
+
 	button.Connect("enter-notify-event", cancelClose)
 
 	if len(instances) == 1 {
@@ -269,6 +273,9 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 				} else if btnEvent.Button() == 3 {
 					contextMenu := clientMenuContext(t.Class, instances)
 					contextMenu.PopupAtWidget(button, widgetAnchor, menuAnchor, nil)
+					contextMenu.Connect("hide", func() {
+						btn.UnsetStateFlags(gtk.StateFlagPrelight)
+					})
 					return true
 				}
 			}
@@ -280,6 +287,10 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 			if btnEvent.Button() == 1 {
 				menu := clientMenu(t.Class, instances)
 				menu.PopupAtWidget(button, widgetAnchor, menuAnchor, nil)
+				menu.Connect("hide", func() {
+					btn.UnsetStateFlags(gtk.StateFlagPrelight)
+				})
+
 				return true
 			} else if btnEvent.Button() == 2 {
 				launch(t.Class)
@@ -287,6 +298,9 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 			} else if btnEvent.Button() == 3 {
 				contextMenu := clientMenuContext(t.Class, instances)
 				contextMenu.PopupAtWidget(button, widgetAnchor, menuAnchor, nil)
+				contextMenu.Connect("hide", func() {
+					btn.UnsetStateFlags(gtk.StateFlagPrelight)
+				})
 				return true
 			}
 			return false
