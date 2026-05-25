@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type workspace struct {
@@ -119,4 +121,48 @@ func getActiveWindow() (*client, error) {
 		return &activeWindow, nil
 	}
 	return nil, err
+}
+
+func dispatch(luaCmd string, legacyCmd string) {
+	reply, err := hyprctl(luaCmd)
+
+	// Fall back to legacy
+	if err != nil {
+		reply, err = hyprctl(legacyCmd)
+	}
+
+	// If we got an error, well, log it but nothing more
+	if err != nil {
+		log.Debugf("%s -> %s", legacyCmd, reply)
+	}
+}
+
+func focusWindow(address string) {
+	lua := fmt.Sprintf("dispatch hl.dsp.focus({ window = 'address:%s' })", address)
+	legacy := fmt.Sprintf("dispatch focuswindow address:%s ", address)
+	dispatch(lua, legacy)
+}
+
+func closeWindow(address string) {
+	lua := fmt.Sprintf("dispatch hl.dsp.window.close({ window = 'address:%s' })", address)
+	legacy := fmt.Sprintf("dispatch closewindow address:%s", address)
+	dispatch(lua, legacy)
+}
+
+func toggleFloatingWindow(address string) {
+	lua := fmt.Sprintf("dispatch hl.dsp.window.float({ window = 'address:%s', action = 'toggle' })", address)
+	legacy := fmt.Sprintf("dispatch togglefloating address:%s", address)
+	dispatch(lua, legacy)
+}
+
+func toggleFullscreenWindow(address string) {
+	lua := fmt.Sprintf("dispatch hl.dsp.window.fullscreen({ window = 'address:%s', action = 'toggle' })", address)
+	legacy := fmt.Sprintf("dispatch fullscreen address:%s", address)
+	dispatch(lua, legacy)
+}
+
+func moveWindowToWorkspace(address string, workspace int) {
+	lua := fmt.Sprintf("dispatch hl.dsp.window.move({ workspace = '%v', window = 'address:%v' })", workspace, address)
+	legacy := fmt.Sprintf("dispatch movetoworkspace %d, address:%s", workspace, address)
+	dispatch(lua, legacy)
 }
