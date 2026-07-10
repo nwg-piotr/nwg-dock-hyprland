@@ -19,6 +19,32 @@ type workspace struct {
 	Lastwindowtitle string `json:"lastwindowtitle"`
 }
 
+type hyprPlugin struct {
+	Name string `json:"name"`
+}
+
+type vDesk struct {
+	Id         int    `json:"id"`
+	Name       string `json:"name"`
+	Workspaces []int  `json:"workspaces"`
+}
+
+func isPluginLoaded(plugin string) bool {
+	reply, err := hyprctl("j/plugin list")
+	if err == nil {
+		var plugins []hyprPlugin
+		err = json.Unmarshal([]byte(reply), &plugins)
+		if err == nil {
+			for _, p := range plugins {
+				if p.Name == plugin {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 type monitor struct {
 	Id              int     `json:"id"`
 	Name            string  `json:"name"`
@@ -139,6 +165,34 @@ func dispatch(luaCmd string, legacyCmd string) {
 }
 
 func focusWindow(address string) {
+	if isPluginLoaded("virtual-desktops") {
+		reply, err := hyprctl("j/printstate")
+		if err == nil {
+			var vdesks []vDesk
+			json.Unmarshal([]byte(reply), &vdesks)
+
+			var wsId = -1
+			for _, c := range clients {
+				if c.Address == address {
+					wsId = c.Workspace.Id
+					break
+				}
+			}
+			if wsId != -1 {
+				for _, vd := range vdesks {
+					for _, ws := range vd.Workspaces {
+						if ws == wsId {
+							luaCmd := fmt.Sprintf("dispatch function() hl.plugin.virtual_desktops.vdesk('%d') end", vd.Id)
+							legacyCmd := fmt.Sprintf("dispatch vdesk %d", vd.Id)
+							dispatch(luaCmd, legacyCmd)
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+
 	lua := fmt.Sprintf("dispatch hl.dsp.focus({ window = 'address:%s' })", address)
 	legacy := fmt.Sprintf("dispatch focuswindow address:%s ", address)
 	dispatch(lua, legacy)
@@ -165,5 +219,11 @@ func toggleFullscreenWindow(address string) {
 func moveWindowToWorkspace(address string, workspace int) {
 	lua := fmt.Sprintf("dispatch hl.dsp.window.move({ workspace = '%v', window = 'address:%v' })", workspace, address)
 	legacy := fmt.Sprintf("dispatch movetoworkspace %d, address:%s", workspace, address)
+	dispatch(lua, legacy)
+}
+
+func moveWindowToDesk(address string, desk int) {
+	lua := fmt.Sprintf("dispatch function() hl.plugin.virtual_desktops.movetodesk('%d,address:%s') end", desk, address)
+	legacy := fmt.Sprintf("dispatch movetodesk %d,address:%s", desk, address)
 	dispatch(lua, legacy)
 }
