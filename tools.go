@@ -329,6 +329,7 @@ func clientMenu(class string, instances []client) gtk.Menu {
 
 func clientMenuContext(class string, instances []client) gtk.Menu {
 	menu := gtk.NewMenu()
+	virtualDesktopsLoaded := isPluginLoaded("virtual-desktops")
 
 	iconName, err := getIcon(class)
 	if err != nil {
@@ -377,10 +378,19 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 		submenu.Append(&s.MenuItem)
 
 		for i := 1; i < int(*numWS)+1; i++ {
-			subItem := gtk.NewMenuItemWithLabel(fmt.Sprintf("-> WS %v", i))
+			label := fmt.Sprintf("-> WS %v", i)
+			if virtualDesktopsLoaded {
+				label = fmt.Sprintf("-> VD %v", i)
+			}
+			
+			subItem := gtk.NewMenuItemWithLabel(label)
 			target := i
 			subItem.Connect("activate", func() {
-				moveWindowToWorkspace(a, target)
+				if virtualDesktopsLoaded {
+					moveWindowToDesk(a, target)
+				} else {
+					moveWindowToWorkspace(a, target)
+				}
 			})
 			submenu.Append(subItem)
 		}
