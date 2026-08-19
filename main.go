@@ -194,7 +194,6 @@ func buildMainBox() {
 						button.SetObjectProperty("name", "")
 					}
 					alreadyAdded = append(alreadyAdded, c.Class)
-					clientMenu(c.Class, instances)
 				} else {
 					continue
 				}
@@ -228,7 +227,6 @@ func buildMainBox() {
 						button.SetObjectProperty("name", "")
 					}
 					alreadyAdded = append(alreadyAdded, t.Class)
-					clientMenu(t.Class, instances)
 				} else {
 					continue
 				}
