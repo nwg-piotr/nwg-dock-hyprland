@@ -62,6 +62,7 @@ var (
 	classesToIgnore                    []string
 	mouseInsideDock                    bool
 	mouseInsideHotspot                 bool
+	cssFilePath                        string
 )
 
 // Flags
@@ -529,6 +530,13 @@ func main() {
 	createDir(configDirectory)
 
 	if !pathExists(fmt.Sprintf("%s/style.css", configDirectory)) {
+		if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/style.css")) {
+			cssFilePath = filepath.Join(dataHome, "nwg-dock-hyprland/style.css")
+		} else if pathExists("/usr/local/share/nwg-dock-hyprland/style.css"){
+			cssFilePath = "/usr/local/share/nwg-dock-hyprland/style.css"
+		} else {
+			cssFilePath = "/usr/share/nwg-dock-hyprland/style.css"
+		}
 		err := copyFile(filepath.Join(dataHome, "nwg-dock-hyprland/style.css"), fmt.Sprintf("%s/style.css", configDirectory))
 		if err != nil {
 			log.Warnf("Error copying file: %s", err)

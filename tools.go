@@ -18,6 +18,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Icons
+var (
+	iconIconMissing                    string
+	iconTaskEmpty                      string
+	iconTaskEmptyVertical              string
+	iconGrid                           string
+	iconTaskSingle                     string
+	iconTaskSingleVertical             string
+	iconTaskMultiple                   string
+	iconTaskMultipleVertical           string
+)
+
 func taskInstances(ID string) []client {
 	var found []client
 	for _, c := range clients {
@@ -26,6 +38,15 @@ func taskInstances(ID string) []client {
 		}
 	}
 	return found
+}
+
+func pathExists(name string) bool {
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
 }
 
 func pinnedButton(ID string, position *string) *gtk.Box {
@@ -40,8 +61,14 @@ func pinnedButton(ID string, position *string) *gtk.Box {
 
 	image, err := createImage(ID, imgSizeScaled)
 	if err != nil || image == nil {
-		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
-			imgSizeScaled, imgSizeScaled)
+		if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg")) {
+			iconIconMissing = filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg")
+		} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/icon-missing.svg") {
+			iconIconMissing = "/usr/local/share/nwg-dock-hyprland/images/icon-missing.svg"
+		} else {
+			iconIconMissing = "/usr/share/nwg-dock-hyprland/images/icon-missing.svg"
+		}
+		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(iconIconMissing, imgSizeScaled, imgSizeScaled)
 		if err == nil {
 			image = gtk.NewImageFromPixbuf(pixbuf)
 		} else {
@@ -75,11 +102,23 @@ func pinnedButton(ID string, position *string) *gtk.Box {
 
 	var pixbuf *gdkpixbuf.Pixbuf
 	if !vertical {
-		pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
-			imgSizeScaled, imgSizeScaled/8)
+		if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg")) {
+			iconTaskEmpty = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg")
+		} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-empty.svg") {
+			iconTaskEmpty = "/usr/local/share/nwg-dock-hyprland/images/task-empty.svg"
+		} else {
+			iconTaskEmpty = "/usr/share/nwg-dock-hyprland/images/task-empty.svg"
+		}
+		pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskEmpty, imgSizeScaled, imgSizeScaled/8)
 	} else {
-		pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
-			imgSizeScaled/8, imgSizeScaled)
+		if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg")) {
+			iconTaskEmptyVertical = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg")
+		} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-empty-vertical.svg") {
+			iconTaskEmptyVertical = "/usr/local/share/nwg-dock-hyprland/images/task-empty-vertical.svg"
+		} else {
+			iconTaskEmptyVertical = "/usr/share/nwg-dock-hyprland/images/task-empty-vertical.svg"
+		}
+		pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskEmptyVertical, imgSizeScaled/8, imgSizeScaled)
 	}
 
 	if err == nil {
@@ -121,7 +160,14 @@ func launcherButton(position *string) *gtk.Box {
 		var pixbuf *gdkpixbuf.Pixbuf
 		var e error
 		if *ico == "" {
-			pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/grid.svg"), imgSizeScaled, imgSizeScaled)
+			if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/grid.svg")) {
+				iconGrid = filepath.Join(dataHome, "nwg-dock-hyprland/images/grid.svg")
+			} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/grid.svg") {
+				iconGrid = "/usr/local/share/nwg-dock-hyprland/images/grid.svg"
+			} else {
+				iconGrid = "/usr/share/nwg-dock-hyprland/images/grid.svg"
+			}
+			pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(iconGrid, imgSizeScaled, imgSizeScaled)
 		} else {
 			pixbuf, e = createPixbuf(*ico, imgSizeScaled)
 		}
@@ -148,11 +194,23 @@ func launcherButton(position *string) *gtk.Box {
 			button.Connect("enter-notify-event", cancelClose)
 
 			if !vertical {
-				pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
-					imgSizeScaled, imgSizeScaled/8)
+				if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg")) {
+					iconTaskEmpty = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg")
+				} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-empty.svg") {
+					iconTaskEmpty = "/usr/local/share/nwg-dock-hyprland/images/task-empty.svg"
+				} else {
+					iconTaskEmpty = "/usr/share/nwg-dock-hyprland/images/task-empty.svg"
+				}
+				pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskEmpty, imgSizeScaled, imgSizeScaled/8)
 			} else {
-				pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
-					imgSizeScaled/8, imgSizeScaled)
+				if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg")) {
+					iconTaskEmptyVertical = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg")
+				} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-empty-vertical.svg") {
+					iconTaskEmptyVertical = "/usr/local/share/nwg-dock-hyprland/images/task-empty-vertical.svg"
+				} else {
+					iconTaskEmptyVertical = "/usr/share/nwg-dock-hyprland/images/task-empty-vertical.svg"
+				}
+				pixbuf, e = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskEmptyVertical, imgSizeScaled/8, imgSizeScaled)
 			}
 
 			if e == nil {
@@ -198,8 +256,14 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 	if image == nil {
 		//var pixbuf *gdk.Pixbuf
 		//var err error
-		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg"),
-			imgSizeScaled, imgSizeScaled)
+		if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg")) {
+			iconIconMissing = filepath.Join(dataHome, "nwg-dock-hyprland/images/icon-missing.svg")
+		} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/icon-missing.svg") {
+			iconIconMissing = "/usr/local/share/nwg-dock-hyprland/images/icon-missing.svg"
+		} else {
+			iconIconMissing = "/usr/share/nwg-dock-hyprland/images/icon-missing.svg"
+		}
+		pixbuf, err := gdkpixbuf.NewPixbufFromFileAtSize(iconIconMissing, imgSizeScaled, imgSizeScaled)
 
 		if err == nil {
 			image = gtk.NewImageFromPixbuf(pixbuf)
@@ -218,27 +282,63 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 	var err error
 	if len(instances) > 1 {
 		if !vertical {
-			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg"),
-				imgSizeScaled, imgSizeScaled/8)
+			if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg")) {
+				iconTaskMultiple = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple.svg")
+			} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-multiple.svg") {
+				iconTaskMultiple = "/usr/local/share/nwg-dock-hyprland/images/task-multiple.svg"
+			} else {
+				iconTaskMultiple = "/usr/share/nwg-dock-hyprland/images/task-multiple.svg"
+			}
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskMultiple, imgSizeScaled, imgSizeScaled/8)
 		} else {
-			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple-vertical.svg"),
-				imgSizeScaled/8, imgSizeScaled)
+			if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple-vertical.svg")) {
+				iconTaskMultipleVertical = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-multiple-vertical.svg")
+			} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-multiple-vertical.svg") {
+				iconTaskMultipleVertical = "/usr/local/share/nwg-dock-hyprland/images/task-multiple-vertical.svg"
+			} else {
+				iconTaskMultipleVertical = "/usr/share/nwg-dock-hyprland/images/task-multiple-vertical.svg"
+			}
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskMultipleVertical, imgSizeScaled/8, imgSizeScaled)
 		}
 	} else if len(instances) == 1 {
 		if !vertical {
-			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg"),
-				imgSizeScaled, imgSizeScaled/8)
+			if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg")) {
+				iconTaskSingle = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single.svg")
+			} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-single.svg") {
+				iconTaskSingle = "/usr/local/share/nwg-dock-hyprland/images/task-single.svg"
+			} else {
+				iconTaskSingle = "/usr/share/nwg-dock-hyprland/images/task-single.svg"
+			}
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskSingle, imgSizeScaled, imgSizeScaled/8)
 		} else {
-			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single-vertical.svg"),
-				imgSizeScaled/8, imgSizeScaled)
+			if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single-vertical.svg")) {
+				iconTaskSingleVertical = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-single-vertical.svg")
+			} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-single-vertical.svg") {
+				iconTaskSingleVertical = "/usr/local/share/nwg-dock-hyprland/images/task-single-vertical.svg"
+			} else {
+				iconTaskSingleVertical = "/usr/share/nwg-dock-hyprland/images/task-single-vertical.svg"
+			}
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskSingleVertical, imgSizeScaled/8, imgSizeScaled)
 		}
 	} else {
 		if !vertical {
-			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg"),
-				imgSizeScaled, imgSizeScaled/8)
+			if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg")) {
+				iconTaskEmpty = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty.svg")
+			} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-empty.svg") {
+				iconTaskEmpty = "/usr/local/share/nwg-dock-hyprland/images/task-empty.svg"
+			} else {
+				iconTaskEmpty = "/usr/share/nwg-dock-hyprland/images/task-empty.svg"
+			}
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskEmpty, imgSizeScaled, imgSizeScaled/8)
 		} else {
-			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg"),
-				imgSizeScaled/8, imgSizeScaled)
+			if pathExists(filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg")) {
+				iconTaskEmptyVertical = filepath.Join(dataHome, "nwg-dock-hyprland/images/task-empty-vertical.svg")
+			} else if pathExists("/usr/local/share/nwg-dock-hyprland/images/task-empty-vertical.svg") {
+				iconTaskEmptyVertical = "/usr/local/share/nwg-dock-hyprland/images/task-empty-vertical.svg"
+			} else {
+				iconTaskEmptyVertical = "/usr/share/nwg-dock-hyprland/images/task-empty-vertical.svg"
+			}
+			pixbuf, err = gdkpixbuf.NewPixbufFromFileAtSize(iconTaskEmptyVertical, imgSizeScaled/8, imgSizeScaled)
 		}
 	}
 	if err == nil {
@@ -811,15 +911,6 @@ func getName(appName string) string {
 	}
 
 	return name
-}
-
-func pathExists(name string) bool {
-	if _, err := os.Stat(name); err != nil {
-		if os.IsNotExist(err) {
-			return false
-		}
-	}
-	return true
 }
 
 func loadTextFile(path string) ([]string, error) {
