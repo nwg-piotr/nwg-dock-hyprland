@@ -72,6 +72,7 @@ var debug = flag.Bool("debug", false, "turn on debug messages")
 var displayVersion = flag.Bool("v", false, "display Version information")
 var exclusive = flag.Bool("x", false, "set eXclusive zone: move other windows aside; overrides the \"-l\" argument")
 var full = flag.Bool("f", false, "take Full screen width/height")
+var forceKillActions = flag.Bool("kill", false, "show force-kill actions in client context menus")
 var ignoreClasses = flag.String("g", "", "quote-delimited, space-separated class list to iGnore in the dock")
 var hotspotDelay = flag.Int64("hd", 20, "Hotspot Delay [ms]; the smaller, the faster mouse pointer needs to enter hotspot for the dock to appear; set 0 to disable")
 var hotspotLayer = flag.String("hl", "overlay", "Hotspot Layer \"overlay\" or \"top\"")
@@ -791,6 +792,13 @@ func main() {
 						refreshMainBox(true)
 					}
 					lastWinAddr = winAddr
+				}
+			} else if strings.HasPrefix(s, "openwindow>>") || strings.HasPrefix(s, "closewindow>>") {
+				err = listClients()
+				if err != nil {
+					log.Fatalf("Couldn't list clients: %s", err)
+				} else {
+					refreshMainBox(true)
 				}
 			}
 		}

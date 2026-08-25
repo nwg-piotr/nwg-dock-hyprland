@@ -110,6 +110,8 @@ Usage of nwg-dock-hyprland:
     	alternative name or path for the launcher ICOn
   -iw string
     	Ignore the running applications on these Workspaces based on the workspace's name or id, e.g. "special,10"
+  -kill
+        show force-kill actions in client context menus
   -l string
     	Layer "overlay", "top" or "bottom" (default "overlay")
   -lp string

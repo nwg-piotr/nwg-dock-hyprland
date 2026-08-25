@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/diamondburned/gotk4/pkg/gdk/v3"
 	"github.com/diamondburned/gotk4/pkg/gdkpixbuf/v2"
@@ -26,6 +28,55 @@ func taskInstances(ID string) []client {
 		}
 	}
 	return found
+}
+
+func uniqueClientPids(instances []client) []int {
+	seen := make(map[int]bool)
+	pids := make([]int, 0, len(instances))
+	for _, instance := range instances {
+		if instance.Pid > 1 && !seen[instance.Pid] {
+			seen[instance.Pid] = true
+			pids = append(pids, instance.Pid)
+		}
+	}
+	return pids
+}
+
+func forceKillClients(targets []client) {
+	reply, err := hyprctl("j/clients")
+	if err != nil {
+		log.Errorf("Failed to refresh clients before force killing: %s", err)
+		return
+	}
+
+	var liveClients []client
+	if err := json.Unmarshal(reply, &liveClients); err != nil {
+		log.Errorf("Failed to parse clients before force killing: %s", err)
+		return
+	}
+
+	liveByAddress := make(map[string]client, len(liveClients))
+	for _, live := range liveClients {
+		liveByAddress[live.Address] = live
+	}
+
+	killedPids := make(map[int]bool)
+	for _, target := range targets {
+		live, ok := liveByAddress[target.Address]
+		if !ok || live.Pid != target.Pid || live.Pid <= 1 {
+			log.Warnf("Not force killing stale client %s (PID %d)", target.Address, target.Pid)
+			continue
+		}
+		if killedPids[live.Pid] {
+			continue
+		}
+		killedPids[live.Pid] = true
+		if err := syscall.Kill(live.Pid, syscall.SIGKILL); err != nil {
+			log.Errorf("Failed to force kill PID %d: %s", live.Pid, err)
+		} else {
+			log.Infof("Force killed PID %d", live.Pid)
+		}
+	}
 }
 
 func pinnedButton(ID string, position *string) *gtk.Box {
@@ -353,12 +404,19 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 		submenu := gtk.NewMenu()
 
 		a := instance.Address
-
 		subitem := gtk.NewMenuItemWithLabel("closewindow")
 		submenu.Append(subitem)
 		subitem.Connect("activate", func() {
 			closeWindow(a)
 		})
+
+		if *forceKillActions && instance.Pid > 1 {
+			subitem = gtk.NewMenuItemWithLabel(fmt.Sprintf("Force kill (PID %d)", instance.Pid))
+			submenu.Append(subitem)
+			subitem.Connect("activate", func() {
+				forceKillClients([]client{instance})
+			})
+		}
 
 		subitem = gtk.NewMenuItemWithLabel("togglefloating")
 		submenu.Append(subitem)
@@ -382,7 +440,7 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 			if virtualDesktopsLoaded {
 				label = fmt.Sprintf("-> VD %v", i)
 			}
-			
+
 			subItem := gtk.NewMenuItemWithLabel(label)
 			target := i
 			subItem.Connect("activate", func() {
@@ -414,6 +472,20 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 		}
 	})
 	menu.Append(closeAllWindows)
+
+	pids := uniqueClientPids(instances)
+	if *forceKillActions && len(pids) > 0 {
+		forceKill := gtk.NewMenuItem()
+		if len(pids) == 1 {
+			forceKill.SetLabel(fmt.Sprintf("Force kill PID %d", pids[0]))
+		} else {
+			forceKill.SetLabel(fmt.Sprintf("Force kill %d PIDs", len(pids)))
+		}
+		forceKill.Connect("activate", func() {
+			forceKillClients(instances)
+		})
+		menu.Append(forceKill)
+	}
 
 	pinItem := gtk.NewMenuItem()
 	if !inPinned(class) {
