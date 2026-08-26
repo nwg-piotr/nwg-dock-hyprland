@@ -372,6 +372,7 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 		gtklayershell.SetMonitor(dockWindow, &monitor)
 		if delay <= *hotspotDelay || *hotspotDelay == 0 {
 			log.Debugf("Delay %v < %v ms, let's show the window!", delay, *hotspotDelay)
+			stopReentryGuard(dockWindow)
 			activeHotspot = guard
 			dockWindow.Hide()
 			dockWindow.Show()
