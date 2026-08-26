@@ -309,8 +309,9 @@ func clientMenu(class string, instances []client) gtk.Menu {
 		image := gtk.NewImageFromIconName(iconName, int(gtk.IconSizeMenu))
 		hbox.PackStart(image, false, false, 0)
 		title := instance.Title
-		if len(title) > 25 {
-			title = title[:25]
+		titleRunes := []rune(title)
+		if len(titleRunes) > 25 {
+			title = string(titleRunes[:25])
 		}
 		var label *gtk.Label
 		label = gtk.NewLabel(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
@@ -341,11 +342,10 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 		image := gtk.NewImageFromIconName(iconName, int(gtk.IconSizeMenu))
 		hbox.PackStart(image, false, false, 0)
 		title := instance.Title
-
-		if len(title) > 25 {
-			title = title[:25]
+		titleRunes := []rune(title)
+		if len(titleRunes) > 25 {
+			title = string(titleRunes[:25])
 		}
-
 		label := gtk.NewLabel(fmt.Sprintf("%s (%v)", title, instance.Workspace.Name))
 		hbox.PackStart(label, false, false, 0)
 		menuItem.Add(hbox)
@@ -934,6 +934,8 @@ func launch(ID string) {
 
 	if err := cmd.Start(); err != nil {
 		log.Error("Unable to launch command!", err.Error())
+	} else {
+		go cmd.Wait() // Reap child process to prevent zombie
 	}
 
 	if *autohide {
