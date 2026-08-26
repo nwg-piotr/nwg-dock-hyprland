@@ -68,6 +68,7 @@ var (
 var alignment = flag.String("a", "center", "Alignment in full width/height: \"start\", \"center\" or \"end\"")
 var autohide = flag.Bool("d", false, "auto-hiDe: show dock when hotspot hovered, close when left or a button clicked")
 var cssFileName = flag.String("s", "style.css", "Styling: css file name")
+var pinnedFileName = flag.String("pi", "", "file with PInned launchers separated with newlines")
 var debug = flag.Bool("debug", false, "turn on debug messages")
 var displayVersion = flag.Bool("v", false, "display Version information")
 var exclusive = flag.Bool("x", false, "set eXclusive zone: move other windows aside; overrides the \"-l\" argument")
@@ -535,11 +536,15 @@ func main() {
 		}
 	}
 
-	cacheDirectory := cacheDir()
-	if cacheDirectory == "" {
-		log.Panic("Couldn't determine cache directory location")
+	if *pinnedFileName == "" {
+		cacheDirectory := cacheDir()
+		if cacheDirectory == "" {
+			log.Panic("Couldn't determine cache directory location")
+		}
+		pinnedFile = filepath.Join(cacheDirectory, "nwg-dock-pinned")
+	} else {
+		pinnedFile = filepath.Join(configDirectory, *pinnedFileName)
 	}
-	pinnedFile = filepath.Join(cacheDirectory, "nwg-dock-pinned")
 	cssFile := filepath.Join(configDirectory, *cssFileName)
 	ignoredWorkspaces = strings.Split(*ignoreWorkspaces, ",")
 	if *ignoreWorkspaces != "" {
