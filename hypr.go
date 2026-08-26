@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -21,6 +22,35 @@ type workspace struct {
 
 type hyprPlugin struct {
 	Name string `json:"name"`
+}
+
+type hyprAnimation struct {
+	Name    string  `json:"name"`
+	Enabled bool    `json:"enabled"`
+	Speed   float64 `json:"speed"`
+}
+
+func layerCloseAnimationDuration() time.Duration {
+	reply, err := hyprctl("j/animations")
+	if err != nil {
+		return 0
+	}
+
+	var response [][]hyprAnimation
+	if json.Unmarshal(reply, &response) != nil || len(response) == 0 {
+		return 0
+	}
+
+	var duration time.Duration
+	for _, animation := range response[0] {
+		if animation.Enabled && (animation.Name == "layersOut" || animation.Name == "fadeLayersOut") {
+			animationDuration := time.Duration(animation.Speed * float64(100*time.Millisecond))
+			if animationDuration > duration {
+				duration = animationDuration
+			}
+		}
+	}
+	return duration
 }
 
 type vDesk struct {

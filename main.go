@@ -37,6 +37,12 @@ const (
 	WindowHide
 )
 
+type hotspotGuard struct {
+	detector                  *gtk.EventBox
+	monitor                   *gdk.Monitor
+	normalWidth, normalHeight int
+}
+
 var (
 	activeClient                       *client
 	appDirs                            []string
@@ -47,6 +53,7 @@ var (
 	his                                string // $HYPRLAND_INSTANCE_SIGNATURE
 	hyprDir                            string // $XDG_RUNTIME_DIR/hypr since hyprland>0.39.1, earlier /tmp/hypr
 	ignoredWorkspaces                  []string
+	activeHotspot                      *hotspotGuard
 	imgSizeScaled                      int
 	lastWinAddr                        string
 	mainBox                            *gtk.Box
@@ -56,6 +63,8 @@ var (
 	pinned                             []string
 	pinnedFile                         string
 	src                                glib.SourceHandle
+	reentryGuardSrc                    glib.SourceHandle
+	closingHotspot                     *hotspotGuard
 	widgetAnchor, menuAnchor           gdk.Gravity
 	win                                *gtk.Window
 	windowStateChannel                 chan WindowState = make(chan WindowState, 1)
@@ -94,6 +103,76 @@ var allowMultipleInstances = flag.Bool("m", false, "allow Multiple instances of 
 
 var vertical bool
 var alignmentBox *gtk.Box
+
+func resizeHotspotGuard(guard *hotspotGuard, dockWindow *gtk.Window, expanded bool) {
+	if !expanded {
+		guard.detector.SetSizeRequest(guard.normalWidth, guard.normalHeight)
+		return
+	}
+
+	w, h := dockWindow.Size()
+	if *position == "bottom" || *position == "top" {
+		if *position == "bottom" {
+			h += *marginBottom
+		} else {
+			h += *marginTop
+		}
+		guard.detector.SetSizeRequest(w, h-2)
+	} else {
+		if *position == "left" {
+			w += *marginLeft
+		} else {
+			w += *marginRight
+		}
+		guard.detector.SetSizeRequest(w-2, h)
+	}
+}
+
+func stopReentryGuard(dockWindow *gtk.Window) {
+	if reentryGuardSrc > 0 {
+		glib.SourceRemove(reentryGuardSrc)
+		reentryGuardSrc = 0
+	}
+	if closingHotspot != nil {
+		resizeHotspotGuard(closingHotspot, dockWindow, false)
+		closingHotspot = nil
+	}
+}
+
+func revealDock(dockWindow *gtk.Window, guard *hotspotGuard) {
+	stopReentryGuard(dockWindow)
+	activeHotspot = guard
+	gtklayershell.SetMonitor(dockWindow, guard.monitor)
+	if !dockWindow.IsVisible() {
+		dockWindow.Show()
+	}
+}
+
+func hideDockWithReentryGuard(dockWindow *gtk.Window) {
+	if dockWindow == nil || !dockWindow.IsVisible() {
+		return
+	}
+
+	duration := layerCloseAnimationDuration()
+	if activeHotspot == nil || duration == 0 {
+		dockWindow.Hide()
+		return
+	}
+
+	if reentryGuardSrc > 0 {
+		glib.SourceRemove(reentryGuardSrc)
+	}
+	closingHotspot = activeHotspot
+	resizeHotspotGuard(closingHotspot, dockWindow, true)
+	dockWindow.Hide()
+
+	reentryGuardSrc = glib.TimeoutAdd(uint(duration.Milliseconds()), func() bool {
+		reentryGuardSrc = 0
+		resizeHotspotGuard(closingHotspot, dockWindow, false)
+		closingHotspot = nil
+		return false
+	})
+}
 
 func buildMainBox() {
 	if mainBox != nil {
@@ -251,6 +330,7 @@ func buildMainBox() {
 func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 	w, h := dockWindow.Size()
 	win := gtk.NewWindow(gtk.WindowToplevel)
+	guard := &hotspotGuard{monitor: &monitor}
 
 	gtklayershell.InitForWindow(win)
 	gtklayershell.SetMonitor(win, &monitor)
@@ -292,6 +372,8 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 		gtklayershell.SetMonitor(dockWindow, &monitor)
 		if delay <= *hotspotDelay || *hotspotDelay == 0 {
 			log.Debugf("Delay %v < %v ms, let's show the window!", delay, *hotspotDelay)
+			stopReentryGuard(dockWindow)
+			activeHotspot = guard
 			dockWindow.Hide()
 			dockWindow.Show()
 		} else {
@@ -302,6 +384,9 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 	if *position == "bottom" || *position == "top" {
 		detectorBox.SetSizeRequest(w, h/3)
 		hotspotBox.SetSizeRequest(w, 2)
+		guard.detector = detectorBox
+		guard.normalWidth = w
+		guard.normalHeight = h / 3
 		if *position == "bottom" {
 			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeBottom, true)
 		} else {
@@ -315,6 +400,9 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 	if *position == "left" || *position == "right" {
 		detectorBox.SetSizeRequest(w/3, h)
 		hotspotBox.SetSizeRequest(2, h)
+		guard.detector = detectorBox
+		guard.normalWidth = w / 3
+		guard.normalHeight = h
 		if *position == "left" {
 			gtklayershell.SetAnchor(win, gtklayershell.LayerShellEdgeLeft, true)
 		} else {
@@ -332,17 +420,26 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 	}
 
 	if *autohide {
+		win.AddEvents(int(gdk.PointerMotionMask))
+		win.Connect("motion-notify-event", func() {
+			if closingHotspot == guard {
+				revealDock(dockWindow, guard)
+			}
+		})
 		win.Connect("leave-notify-event", func() {
 			mouseInsideHotspot = false
 			glib.TimeoutAdd(1000, func() bool {
 				if !mouseInsideDock && !mouseInsideHotspot {
-					dockWindow.Hide()
+					hideDockWithReentryGuard(dockWindow)
 				}
 				return false
 			})
 		})
 		win.Connect("enter-notify-event", func() {
 			mouseInsideHotspot = true
+			if closingHotspot == guard {
+				revealDock(dockWindow, guard)
+			}
 		})
 	}
 
@@ -658,7 +755,7 @@ func main() {
 		if *autohide {
 			src = glib.TimeoutAdd(uint(1000), func() bool {
 				mouseInsideDock = false
-				win.Hide()
+				hideDockWithReentryGuard(win)
 				src = 0
 				return false
 			})
