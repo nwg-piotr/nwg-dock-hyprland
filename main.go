@@ -62,6 +62,12 @@ var (
 	classesToIgnore                    []string
 	mouseInsideDock                    bool
 	mouseInsideHotspot                 bool
+	moveModeItem                       string
+	moveModeButton                     *gtk.Button
+	moveModeOriginalOrder              []string
+	moveModeRevealer                   *gtk.Revealer
+	launcherTakesLeadSlot              bool
+	pulseTimeout                       glib.SourceHandle
 )
 
 // Flags
@@ -95,7 +101,35 @@ var allowMultipleInstances = flag.Bool("m", false, "allow Multiple instances of 
 var vertical bool
 var alignmentBox *gtk.Box
 
+// packRevealer wraps a pinned item's box in a Revealer for move-mode animation, and packs it into mainBox.
+func packRevealer(box *gtk.Box) *gtk.Revealer {
+	revealer := gtk.NewRevealer()
+	revealer.SetTransitionType(gtk.RevealerTransitionTypeNone)
+	revealer.SetTransitionDuration(0)
+	revealer.Add(box)
+	revealer.SetRevealChild(true)
+	mainBox.PackStart(revealer, false, false, 0)
+	return revealer
+}
+
+// setTaskName sets the task box's CSS name: "moving" > "active" > "".
+func setTaskName(box *gtk.Box, class string) {
+	switch {
+	case class == moveModeItem:
+		box.SetObjectProperty("name", "moving")
+	case class == activeClient.Class && !*autohide:
+		box.SetObjectProperty("name", "active")
+	default:
+		box.SetObjectProperty("name", "")
+	}
+}
+
 func buildMainBox() {
+	if pulseTimeout != 0 {
+		// Cancel any pending pulse - it closes over a revealer we're about to destroy.
+		glib.SourceRemove(pulseTimeout)
+		pulseTimeout = 0
+	}
 	if mainBox != nil {
 		mainBox.Destroy()
 	}
@@ -109,11 +143,22 @@ func buildMainBox() {
 		alignmentBox.PackStart(mainBox, true, false, 0)
 	}
 
-	var err error
-	pinned, err = loadTextFile(pinnedFile)
-	if err != nil {
-		pinned = nil
+	if moveModeItem == "" {
+		// Skip while reordering: hops are only in memory until committed; reloading now would discard them.
+		var err error
+		pinned, err = loadTextFile(pinnedFile)
+		if err != nil {
+			pinned = nil
+		}
 	}
+
+	if moveModeItem != "" && !inPinned(moveModeItem) {
+		// e.g. it was just unpinned - also release the keyboard grab, or it's stuck exclusive.
+		moveModeItem = ""
+		gtklayershell.SetKeyboardMode(win, gtklayershell.LayerShellKeyboardModeNone)
+	}
+	moveModeButton = nil
+	moveModeRevealer = nil
 
 	var allItems []string
 	for _, cntPin := range pinned {
@@ -157,10 +202,12 @@ func buildMainBox() {
 		imgSizeScaled = *imgSize
 	}
 
+	launcherTakesLeadSlot = false
 	if *launcherPos == "start" {
 		button := launcherButton(position)
 		if button != nil {
 			mainBox.PackStart(button, false, false, 0)
+			launcherTakesLeadSlot = true
 		}
 	}
 
@@ -169,7 +216,10 @@ func buildMainBox() {
 		if !inTasks(pin) {
 			if !isIn(classesToIgnore, pin) {
 				button := pinnedButton(pin, position)
-				mainBox.PackStart(button, false, false, 0)
+				revealer := packRevealer(button)
+				if pin == moveModeItem {
+					moveModeRevealer = revealer
+				}
 			} else {
 				log.Debugf("Ignoring pin '%s'", pin)
 			}
@@ -178,20 +228,18 @@ func buildMainBox() {
 			c := instances[0]
 			if !isIn(classesToIgnore, c.Class) {
 				if len(instances) == 1 {
-					button := taskButton(c, instances, position)
-					mainBox.PackStart(button, false, false, 0)
-					if c.Class == activeClient.Class && !*autohide {
-						button.SetObjectProperty("name", "active")
-					} else {
-						button.SetObjectProperty("name", "")
+					box := taskButton(c, instances, position)
+					revealer := packRevealer(box)
+					setTaskName(box, c.Class)
+					if c.Class == moveModeItem {
+						moveModeRevealer = revealer
 					}
 				} else if !isIn(alreadyAdded, c.Class) {
-					button := taskButton(c, instances, position)
-					mainBox.PackStart(button, false, false, 0)
-					if c.Class == activeClient.Class && !*autohide {
-						button.SetObjectProperty("name", "active")
-					} else {
-						button.SetObjectProperty("name", "")
+					box := taskButton(c, instances, position)
+					revealer := packRevealer(box)
+					setTaskName(box, c.Class)
+					if c.Class == moveModeItem {
+						moveModeRevealer = revealer
 					}
 					alreadyAdded = append(alreadyAdded, c.Class)
 					clientMenu(c.Class, instances)
@@ -246,6 +294,10 @@ func buildMainBox() {
 	}
 
 	mainBox.ShowAll()
+
+	if moveModeItem != "" {
+		refocusMovingButton()
+	}
 }
 
 func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
@@ -658,6 +710,10 @@ func main() {
 		if *autohide {
 			src = glib.TimeoutAdd(uint(1000), func() bool {
 				mouseInsideDock = false
+				if moveModeItem != "" {
+					// Otherwise the keyboard grab is stranded on a now-hidden surface.
+					cancelMoveMode()
+				}
 				win.Hide()
 				src = 0
 				return false

@@ -11,12 +11,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/diamondburned/gotk4-layer-shell/pkg/gtklayershell"
 	"github.com/diamondburned/gotk4/pkg/gdk/v3"
 	"github.com/diamondburned/gotk4/pkg/gdkpixbuf/v2"
 	"github.com/diamondburned/gotk4/pkg/glib/v2"
 	"github.com/diamondburned/gotk4/pkg/gtk/v3"
 	log "github.com/sirupsen/logrus"
 )
+
+const HopAnimationMs = 150
 
 func taskInstances(ID string) []client {
 	var found []client
@@ -54,18 +57,53 @@ func pinnedButton(ID string, position *string) *gtk.Box {
 	button.SetAlwaysShowImage(true)
 	button.SetTooltipText(getName(ID))
 
+	moving := ID == moveModeItem
+	if moving {
+		button.SetObjectProperty("name", "moving")
+		moveModeButton = button
+	} else {
+		button.SetObjectProperty("name", "")
+	}
+
 	button.Connect("clicked", func() {
+		if exitMoveModeIfActive(ID) {
+			return
+		}
 		launch(ID)
 	})
 
 	button.Connect("button-release-event", func(btn *gtk.Button, e *gdk.Event) bool {
 		btnEvent := e.AsButton()
 		if btnEvent.Button() == 1 || btnEvent.Button() == 2 {
+			if exitMoveModeIfActive(ID) {
+				return true
+			}
 			launch(ID)
 			return true
 		} else if btnEvent.Button() == 3 {
 			contextMenu := pinnedMenuContext(ID)
 			contextMenu.PopupAtWidget(button, widgetAnchor, menuAnchor, nil)
+			return true
+		}
+		return false
+	})
+
+	button.Connect("key-press-event", func(btn *gtk.Button, e *gdk.Event) bool {
+		if moveModeItem != ID {
+			return false
+		}
+		switch e.AsKey().Keyval() {
+		case gdk.KEY_Left, gdk.KEY_Up, gdk.KEY_a, gdk.KEY_h:
+			hopPinned(ID, -1)
+			return true
+		case gdk.KEY_Right, gdk.KEY_Down, gdk.KEY_d, gdk.KEY_l:
+			hopPinned(ID, 1)
+			return true
+		case gdk.KEY_Return, gdk.KEY_KP_Enter:
+			exitMoveMode()
+			return true
+		case gdk.KEY_Escape, gdk.KEY_q:
+			cancelMoveMode()
 			return true
 		}
 		return false
@@ -98,6 +136,9 @@ func pinnedButton(ID string, position *string) *gtk.Box {
 
 func pinnedMenuContext(taskID string) gtk.Menu {
 	menu := gtk.NewMenu()
+
+	appendMoveMenuItem(menu, taskID)
+
 	menuItem := gtk.NewMenuItemWithLabel("Unpin")
 	menuItem.Connect("activate", func() {
 		unpinTask(taskID)
@@ -213,6 +254,10 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 	}
 	button.SetTooltipText(getName(t.Class))
 
+	if t.Class == moveModeItem {
+		moveModeButton = button
+	}
+
 	var img *gtk.Image
 	var pixbuf *gdkpixbuf.Pixbuf
 	var err error
@@ -256,11 +301,35 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 	}
 	button.Connect("enter-notify-event", cancelClose)
 
+	button.Connect("key-press-event", func(btn *gtk.Button, e *gdk.Event) bool {
+		if moveModeItem != t.Class {
+			return false
+		}
+		switch e.AsKey().Keyval() {
+		case gdk.KEY_Left, gdk.KEY_Up, gdk.KEY_a, gdk.KEY_h:
+			hopPinned(t.Class, -1)
+			return true
+		case gdk.KEY_Right, gdk.KEY_Down, gdk.KEY_d, gdk.KEY_l:
+			hopPinned(t.Class, 1)
+			return true
+		case gdk.KEY_Return, gdk.KEY_KP_Enter:
+			exitMoveMode()
+			return true
+		case gdk.KEY_Escape, gdk.KEY_q:
+			cancelMoveMode()
+			return true
+		}
+		return false
+	})
+
 	if len(instances) == 1 {
 		button.Connect("event", func(btn *gtk.Button, e *gdk.Event) bool {
 			btnEvent := e.AsButton()
 			if btnEvent.Type() == gdk.ButtonReleaseType || btnEvent.Type() == gdk.TouchEndType {
 				if btnEvent.Button() == 1 || btnEvent.Type() == gdk.TouchEndType {
+					if exitMoveModeIfActive(t.Class) {
+						return true
+					}
 					focusWindow(t.Address)
 					return true
 				} else if btnEvent.Button() == 2 {
@@ -278,6 +347,9 @@ func taskButton(t client, instances []client, position *string) *gtk.Box {
 		button.Connect("button-release-event", func(btn *gtk.Button, e *gdk.Event) bool {
 			btnEvent := e.AsButton()
 			if btnEvent.Button() == 1 {
+				if exitMoveModeIfActive(t.Class) {
+					return true
+				}
 				menu := clientMenu(t.Class, instances)
 				menu.PopupAtWidget(button, widgetAnchor, menuAnchor, nil)
 				return true
@@ -414,6 +486,10 @@ func clientMenuContext(class string, instances []client) gtk.Menu {
 		}
 	})
 	menu.Append(closeAllWindows)
+
+	if inPinned(class) {
+		appendMoveMenuItem(menu, class)
+	}
 
 	pinItem := gtk.NewMenuItem()
 	if !inPinned(class) {
@@ -863,6 +939,151 @@ func remove(s []string, r string) []string {
 		}
 	}
 	return s
+}
+
+func indexOf(s []string, v string) int {
+	for i, item := range s {
+		if item == v {
+			return i
+		}
+	}
+	return -1
+}
+
+// moveInPinned swaps id with its neighbour (delta -1 or 1) and persists it.
+func moveInPinned(id string, delta int) bool {
+	idx := indexOf(pinned, id)
+	if idx == -1 {
+		return false
+	}
+	newIdx := idx + delta
+	if newIdx < 0 || newIdx >= len(pinned) {
+		return false
+	}
+	pinned[idx], pinned[newIdx] = pinned[newIdx], pinned[idx]
+	return true
+}
+
+// pinnedBoxPosition maps a pinned-list index to its mainBox child index.
+func pinnedBoxPosition(idx int) int {
+	pos := 0
+	if launcherTakesLeadSlot {
+		pos++
+	}
+	for _, id := range pinned[:idx] {
+		if !isIn(classesToIgnore, id) {
+			pos++
+		}
+	}
+	return pos
+}
+
+// pulseMovedPin moves movingID's widget to its current index and plays a collapse/reveal "it moved" pulse.
+func pulseMovedPin(movingID string) {
+	rev := moveModeRevealer
+	newIdx := indexOf(pinned, movingID)
+	if rev == nil || newIdx == -1 || mainBox == nil {
+		deferRebuild()
+		return
+	}
+	mainBox.ReorderChild(rev, pinnedBoxPosition(newIdx))
+
+	transition := gtk.RevealerTransitionTypeSlideRight
+	if vertical {
+		transition = gtk.RevealerTransitionTypeSlideDown
+	}
+	rev.SetTransitionType(transition)
+	rev.SetTransitionDuration(HopAnimationMs)
+	rev.SetRevealChild(false)
+
+	if pulseTimeout != 0 {
+		glib.SourceRemove(pulseTimeout)
+	}
+	pulseTimeout = glib.TimeoutAdd(uint(HopAnimationMs), func() bool {
+		rev.SetRevealChild(true)
+		// Collapsing to zero size can make GTK reassign focus elsewhere.
+		refocusMovingButton()
+		pulseTimeout = 0
+		return false
+	})
+}
+
+func hopPinned(movingID string, delta int) bool {
+	if !moveInPinned(movingID, delta) {
+		return false
+	}
+	pulseMovedPin(movingID)
+	return true
+}
+
+// appendMoveMenuItem shows "Move", or "Finish moving" while id is already being moved.
+func appendMoveMenuItem(menu *gtk.Menu, id string) {
+	if moveModeItem == id {
+		item := gtk.NewMenuItemWithLabel("Finish moving")
+		item.Connect("activate", func() {
+			exitMoveMode()
+		})
+		menu.Append(item)
+		return
+	}
+	item := gtk.NewMenuItemWithLabel("Move")
+	item.Connect("activate", func() {
+		startMoveMode(id)
+	})
+	menu.Append(item)
+}
+
+// startMoveMode enters move mode for pinned item id, whether it's rendered as a plain pin or (also running) a task button.
+func startMoveMode(id string) {
+	moveModeItem = id
+	moveModeOriginalOrder = append([]string(nil), pinned...)
+	// Exclusive forces keyboard focus unconditionally; OnDemand let focus-follows-mouse override it.
+	gtklayershell.SetKeyboardMode(win, gtklayershell.LayerShellKeyboardModeExclusive)
+	buildMainBox()
+}
+
+// refocusMovingButton grabs keyboard focus back onto the button being moved.
+func refocusMovingButton() {
+	if moveModeButton != nil {
+		moveModeButton.GrabFocus()
+	}
+}
+
+// exitMoveModeIfActive exits move mode if ID is the active item, reporting whether it did.
+func exitMoveModeIfActive(ID string) bool {
+	if moveModeItem != ID {
+		return false
+	}
+	exitMoveMode()
+	return true
+}
+
+func exitMoveMode() {
+	moveModeItem = ""
+	moveModeOriginalOrder = nil
+	if pulseTimeout != 0 {
+		glib.SourceRemove(pulseTimeout)
+		pulseTimeout = 0
+	}
+	savePinned()
+	gtklayershell.SetKeyboardMode(win, gtklayershell.LayerShellKeyboardModeNone)
+	deferRebuild()
+}
+
+// cancelMoveMode reverts to the pinned order from before move mode started.
+func cancelMoveMode() {
+	if moveModeOriginalOrder != nil {
+		pinned = append([]string(nil), moveModeOriginalOrder...)
+	}
+	exitMoveMode()
+}
+
+// deferRebuild runs buildMainBox() after the current event, since calling it directly could destroy a button mid-click.
+func deferRebuild() {
+	glib.TimeoutAdd(0, func() bool {
+		buildMainBox()
+		return false
+	})
 }
 
 func savePinned() {

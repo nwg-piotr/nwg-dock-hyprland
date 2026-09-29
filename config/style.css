@@ -17,6 +17,14 @@ window {
 	border-color: rgba(255, 255, 255, 0.3)
 }
 
+#moving {
+	/* The pinned item currently being repositioned via Move */
+	background-color: rgba(255, 255, 255, 0.15);
+	border-radius: 2px;
+	border: solid 1px;
+	border-color: rgba(255, 255, 255, 0.5)
+}
+
 button, image {
 	background: none;
 	border-style: none;
