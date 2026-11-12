@@ -112,6 +112,8 @@ Usage of nwg-dock-hyprland:
     	Ignore the running applications on these Workspaces based on the workspace's name or id, e.g. "special,10"
   -l string
     	Layer "overlay", "top" or "bottom" (default "overlay")
+  -ld int
+    	Leave Delay [ms]: how long after the mouse pointer left the auto-hidden dock it closes; set 0 to keep it open until a signal or a button click (default 1000)
   -lp string
     	Launcher button position, 'start' or 'end' (default "end")
   -m	allow Multiple instances of the dock (skip lock file check)

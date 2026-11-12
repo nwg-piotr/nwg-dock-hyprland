@@ -81,6 +81,7 @@ var imgSize = flag.Int("i", 48, "Icon size")
 var launcherCmd = flag.String("c", "nwg-drawer", "Command assigned to the launcher button")
 var launcherPos = flag.String("lp", "end", "Launcher button position, 'start' or 'end'")
 var layer = flag.String("l", "overlay", "Layer \"overlay\", \"top\" or \"bottom\"")
+var leaveDelay = flag.Int64("ld", 1000, "Leave Delay [ms]: how long after the mouse pointer left the auto-hidden dock it closes; set 0 to keep it open until a signal or a button click")
 var marginBottom = flag.Int("mb", 0, "Margin Bottom")
 var marginLeft = flag.Int("ml", 0, "Margin Left")
 var marginRight = flag.Int("mr", 0, "Margin Right")
@@ -334,7 +335,10 @@ func setupHotSpot(monitor gdk.Monitor, dockWindow *gtk.Window) gtk.Window {
 	if *autohide {
 		win.Connect("leave-notify-event", func() {
 			mouseInsideHotspot = false
-			glib.TimeoutAdd(1000, func() bool {
+			if *leaveDelay == 0 {
+				return
+			}
+			glib.TimeoutAdd(uint(*leaveDelay), func() bool {
 				if !mouseInsideDock && !mouseInsideHotspot {
 					dockWindow.Hide()
 				}
@@ -655,8 +659,8 @@ func main() {
 
 	// Close the window on leave, but not immediately, to avoid accidental closes
 	win.Connect("leave-notify-event", func() {
-		if *autohide {
-			src = glib.TimeoutAdd(uint(1000), func() bool {
+		if *autohide && *leaveDelay > 0 {
+			src = glib.TimeoutAdd(uint(*leaveDelay), func() bool {
 				mouseInsideDock = false
 				win.Hide()
 				src = 0
